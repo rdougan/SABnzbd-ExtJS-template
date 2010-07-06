@@ -1,0 +1,534 @@
+<!--#set global $statpath=".."#-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+		<title>SABnzbd+</title>
+
+		<link rel="stylesheet" type="text/css" href="$statpath/static/extjs/resources/css/ext-all.css"/>
+		<link rel="stylesheet" type="text/css" href="$statpath/static/extjs/resources/css/xtheme-gray.css"/>
+		<link rel="stylesheet" type="text/css" href="$statpath/static/javascript/ux/fileuploadfield/css/fileuploadfield.css"/>
+		<style rel="stylesheet" type="text/css">
+			.upload-icon {
+				background: url('../static/images/info.png') no-repeat 0 0 !important;
+			}
+			.x-grid3-dirty-cell {
+				background-image:none;
+			}
+			.x-tab-strip-active span.x-tab-strip-text {
+				font-weight:normal;
+			}
+			.Paused {
+				background: #ecf8fc;
+			}
+			.Downloading {
+				background: #fff6e4;
+			}
+			.Idle {
+				background: #ffffff;
+			}
+			.finishedrow {
+				background: #d1ffd3;
+			}
+			.queuedrow {
+				background: #ffeadd;
+			}
+			.file-icon {
+				background-image: url(../static/images/save.png);
+			}
+			.loading-tab {
+				background-image: url(../static/extjs/resources/images/default/grid/loading.gif);
+			}
+			.conection-icon {
+				background-image: url(../static/images/network.png);
+			}
+			.warning-icon {
+				background-image: url(../static/images/warning.png);
+			}
+		</style>
+
+		<script type="text/javascript" src="$statpath/static/extjs/adapter/ext/ext-base.js"></script>
+		<script type="text/javascript" src="$statpath/static/extjs/ext-all.js"></script>
+		<script type="text/javascript" src="$statpath/static/javascript/ux/fileuploadfield/FileUploadField.js"></script>
+		<script type="text/javascript" src="$statpath/static/javascript/gui.js"></script>
+		<script type="text/javascript" src="$statpath/static/javascript/stores.js"></script>
+		<script type="text/javascript">
+
+			var SABid = '';
+			var maintab = 'queuetab';
+			var queuetab = 'filestab';
+			var FileRecord = Ext.data.Record.create([
+				'status',
+				'filename',
+				'percentage',
+				'size'
+			]);
+
+/*-----------------------------------------Setup GUI elements.--------------------------------------------------------*/
+			MyWindow = Ext.extend(MyWindowUi, {
+				initComponent: function() {
+					MyWindow.superclass.initComponent.call(this);
+				}
+			});
+
+			MyWindow1 = Ext.extend(MyWindow1Ui, {
+				initComponent: function() {
+					MyWindow1.superclass.initComponent.call(this);
+				}
+			});
+
+			SABmain = Ext.extend(mainUi, {
+				initComponent: function() {
+					SABmain.superclass.initComponent.call(this);
+				},
+				listeners : {
+					afterrender: {
+						fn: function() {
+						
+						/*-----------------------------Setup buttons-------------------------------------------------*/
+							Ext.getCmp('addfilebutton').on('click', function () {
+								Ext.getCmp('myForm').getForm().reset();
+								Ext.getCmp('myWindow').setWidth(400);
+								Ext.getCmp('myWindow').center();
+								Ext.getCmp('fileaddcat').setValue('None');
+								Ext.getCmp('session').setValue('$session');
+								Ext.getCmp('myWindow').show();
+							});
+							
+							Ext.getCmp('addurlbutton').on('click', function () {
+								Ext.getCmp('myForm1').getForm().reset();
+								Ext.getCmp('myWindow1').setWidth(400);
+								Ext.getCmp('myWindow1').center();
+								Ext.getCmp('urlsession').setValue('$session');
+								Ext.getCmp('myWindow1').show();
+							});
+
+							Ext.getCmp('configbutton').on('click', function () {
+								window.location = "config"
+							});
+
+							Ext.getCmp('configbuttonhis').on('click', function () {
+								window.location = "config"
+							});
+
+							Ext.getCmp('pausebutton').on('click', function () {
+								pauseall();
+							});
+
+							Ext.getCmp('speedlimit').on('change', function (t, n, o) {
+								limitspeed(n);
+							});
+							Ext.getCmp('speedlimit').on('specialkey', function(field, e){
+								if (e.getKey() == e.ENTER) {
+									Ext.getCmp('speedlimit').blur();
+								}
+							})
+
+							Ext.getCmp('queuecat').on('change', function (t, n, o) {
+								var nzo_id = Ext.getCmp('queuegrid').getSelectionModel().getSelected().get('nzo_id');
+								setcat(nzo_id,n);
+							});
+							Ext.getCmp('queuecat').on('specialkey', function(field, e){
+								if (e.getKey() == e.ENTER) {
+									Ext.getCmp('speedlimit').blur();
+								}
+							})
+
+							Ext.getCmp('queuename').on('change', function (t, n, o) {
+								var nzo_id = Ext.getCmp('queuegrid').getSelectionModel().getSelected().get('nzo_id');
+								setname(nzo_id,n);
+							});
+							Ext.getCmp('queuename').on('specialkey', function(field, e){
+								if (e.getKey() == e.ENTER) {
+									Ext.getCmp('speedlimit').blur();
+								}
+							})
+
+							Ext.getCmp('shutdownbutton').on('click', function () {
+								shutdown();
+							});
+
+							Ext.getCmp('restartbutton').on('click', function () {
+								restart();
+							});
+
+							Ext.getCmp('clearbutton').on('click', function () {
+								purge();
+							});
+
+							Ext.getCmp('maintabpanel').on('tabchange', function (t, tab) {
+								Ext.getCmp('testdata').setValue(tab.getId());
+								maintab = tab.getId();
+								Ext.getCmp(maintab).setIconClass('loading-tab');
+								if (maintab=='queuetab') loadqueue(false);
+								if (maintab=='historytab') loadhistory(false);
+							});
+
+							Ext.getCmp('queuetabpanel').on('tabchange', function (t, tab) {
+								Ext.getCmp('testdata').setValue(tab.getId());
+								queuetab = tab.getId();
+								Ext.getCmp(queuetab).setIconClass('loading-tab');
+								if (queuetab=='filestab') loadfiles(false);
+								if (queuetab=='connectionstab') loadconnections(false);
+								if (queuetab=='warningstab') loadwarnings(false);
+							});
+
+							/*-----------------------------Setup drag'n'drop------------------------------------------*/
+							var ddrow = new Ext.dd.DropTarget(Ext.getCmp('queuegrid').getView().mainBody, {  
+								ddGroup : 'mygrid-dd',  
+								notifyDrop : function(dd, e, data){  
+									var sm = Ext.getCmp('queuegrid').getSelectionModel();  
+									var rows = sm.getSelections();  
+									var cindex = dd.getDragData(e).rowIndex;  
+									if (sm.hasSelection()) {  
+										for (i = 0; i < rows.length; i++) {  
+											MyStore.remove(MyStore.getById(rows[i].id));  
+											MyStore.insert(cindex,rows[i]);  
+											queuemove(rows[i].get('nzo_id'),cindex);
+										}  
+										sm.selectRecords(rows);  
+									}    
+								}  
+							});
+						}
+					}
+				}
+			});
+			
+/*-----------------------------------------Queue manipulation functions.----------------------------------------------*/
+  			function queuedelete(nzo_id) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=queue&name=delete&value='+nzo_id+'&session=$session',
+					success: function(response){
+						loadqueue(false);
+					}
+				});
+			}
+
+			function queuepause(nzo_id) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=queue&name=pause&value='+nzo_id+'&session=$session',
+					success: function(response){
+						loadqueue(false);
+					}
+				});
+			}
+			
+			function queueresume(nzo_id) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=queue&name=resume&value='+nzo_id+'&session=$session',
+					success: function(response){
+						loadqueue(false);
+					}
+				});
+			}
+
+			function queueinfo(nzo_id) {
+				MyStore3.removeAll();
+				SABid = nzo_id;
+			}
+
+  			function queuemove(nzo_id,id) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=switch&value='+nzo_id+'&value2='+id+'&session=$session',
+				});
+			}
+
+			function limitspeed(limit) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=config&name=speedlimit&value='+limit+'&session=$session',
+				});
+			}
+
+			function setcat(nzo_id,cat) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=change_cat&value='+nzo_id+'&value2='+cat+'&session=$session',
+				});
+			}
+
+			function setname(nzo_id,name) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=queue&name=rename&value='+nzo_id+'&value2='+name+'&session=$session',
+				});
+			}
+
+			function pauseall() {
+				if (Ext.getCmp('pausebutton').getText() == 'Pause') {
+					Ext.Ajax.request({
+						url: 'tapi?mode=pause&session=$session',
+						success: function(response){
+							Ext.getCmp('pausebutton').setText('Resume');
+							Ext.getCmp('pausebutton').setIcon('../static/images/play-big.png');
+						}
+					});
+				} else {
+					Ext.Ajax.request({
+						url: 'tapi?mode=resume&session=$session',
+						success: function(response){
+							Ext.getCmp('pausebutton').setText('Pause');
+							Ext.getCmp('pausebutton').setIcon('../static/images/pause-big.png');
+						}
+					});
+				}
+			}
+
+			function shutdown() {
+				Ext.Ajax.request({
+					url: 'tapi?mode=shutdown&session=$session',
+				});
+			}
+
+			function restart() {
+				Ext.Ajax.request({
+					url: 'tapi?mode=restart&session=$session',
+				});
+			}
+
+			function purge() {
+				Ext.Ajax.request({
+					url: 'queue/purge?session=$session',
+				});
+			}
+
+/*-----------------------------------------Load functions for all stores.----------------------------------------------*/
+			function loadqueue(reload) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=queue&start=START&limit=LIMIT&output=json&session=$session',
+					success: function(response){
+						var o = Ext.decode(response.responseText);
+						Ext.getCmp('warningstab').setTitle('Warnings('+o.queue.have_warnings+')');
+						for (count=MyStore.getCount();count<o.queue.slots.length;count++){
+							var MyRecord = new Ext.data.Record();
+							MyStore.add(MyRecord);
+						}
+						for (count=o.queue.slots.length;count<MyStore.getCount();count++){
+							MyStore.removeAt(count);
+						}
+						for (count=0;count<o.queue.slots.length;count++){
+							if (o.queue.slots[count].status == 'Paused'){
+								buttons = '<img style="cursor: pointer;" onclick="queueresume(\''+o.queue.slots[count].nzo_id+'\')" src="../static/images/play.png">';
+							} else {
+								buttons = '<img style="cursor: pointer;" onclick="queuepause(\''+o.queue.slots[count].nzo_id+'\')" src="../static/images/pause.png">';
+							}
+							buttons += ' ';
+							buttons += '<img style="cursor: pointer;" onclick="queuedelete(\''+o.queue.slots[count].nzo_id+'\')" src="../static/images/delete.png">';
+							buttons += ' ';
+							buttons += '<img style="cursor: pointer;" onclick="queueinfo(\''+o.queue.slots[count].nzo_id+'\')" src="../static/images/info.png">';
+							MyStore.getAt(count).set('buttons',buttons);
+							MyStore.getAt(count).set('nzo_id',o.queue.slots[count].nzo_id);
+							MyStore.getAt(count).set('filename',o.queue.slots[count].filename);
+							MyStore.getAt(count).set('timeleft',o.queue.slots[count].timeleft);
+							MyStore.getAt(count).set('size',o.queue.slots[count].sizeleft.substring(0,o.queue.slots[count].sizeleft.length-3)+'/'+o.queue.slots[count].size+' ('+o.queue.slots[count].percentage+' %)');
+							MyStore.getAt(count).set('percentage','<div style="height:11px;border:1px dotted #000000"><div style="height:11px;font-size:9px;background:#FF6666;width:'+o.queue.slots[count].percentage+'%"></div></div>');
+							MyStore.getAt(count).set('avg_age',o.queue.slots[count].avg_age);
+							MyStore.getAt(count).set('cat',o.queue.slots[count].cat);
+							MyStore.getAt(count).set('status','<div class="'+o.queue.slots[count].status+'">'+o.queue.slots[count].status+'</div>');
+						}
+						Ext.getCmp('speed').setValue(o.queue.kbpersec);
+						Ext.getCmp('status').setValue('<div class="'+o.queue.status+'">'+o.queue.status+'</div>');
+						Ext.getCmp('freespace').setValue(o.queue.diskspace1+'/'+o.queue.diskspacetotal1+' MB');
+
+						Ext.getCmp('queuetab').setIconClass('');
+						if (reload) {
+							if (maintab == 'historytab') {
+								setTimeout('loadhistory(true)',1000);
+							};
+							if (maintab == 'queuetab') {
+								if (queuetab == 'filestab') {
+									if (SABid != '') {
+										loadfiles(true);
+									} else {
+										Ext.getCmp(queuetab).setIconClass('file-icon');
+										setTimeout('loadqueue(true)',1000);
+									};
+								};
+								if (queuetab == 'connectionstab') {
+									loadconnections(true);
+								};
+								if (queuetab == 'warningstab') {
+									loadwarnings(true);
+								};
+							};
+						};
+					}
+				});
+			}
+
+			function loadhistory(reload) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=history&output=json&session=$session',
+					success: function(response){
+						var o = Ext.decode(response.responseText);
+						for (count=MyStore1.getCount();count<o.history.slots.length;count++){
+							var MyRecord = new Ext.data.Record();
+							MyStore1.add(MyRecord);
+						};
+						for (count=o.history.slots.length;count<MyStore1.getCount();count++){
+							MyStore1.removeAt(count);
+						};
+						for (count=0;count<o.history.slots.length;count++){
+							var downloadtime0 = o.history.slots[count].download_time;
+							var downloadtimeH = Math.floor(downloadtime0/3600);
+							downloadtime0 = downloadtime0 % 3600;
+							var downloadtimeM = Math.floor(downloadtime0/60);
+							var downloadtimeS = downloadtime0 % 60;
+							if (downloadtimeM<10){
+								downloadtimeM = '0'+downloadtimeM;
+							}
+							if (downloadtimeS<10){
+								downloadtimeS = '0'+downloadtimeS;
+							}
+							var downloadtime = downloadtimeH+':'+downloadtimeM+':'+downloadtimeS;
+							
+							MyStore1.getAt(count).set('nzb_name',o.history.slots[count].nzb_name);
+							MyStore1.getAt(count).set('size',o.history.slots[count].size);
+							MyStore1.getAt(count).set('downloadtime',downloadtime);
+							MyStore1.getAt(count).set('status',o.history.slots[count].status);
+						};
+						
+						Ext.getCmp('historytab').setIconClass('');
+						if (reload) {
+							if (maintab == 'historytab') {
+								setTimeout('loadhistory(true)',1000);
+							};
+							if (maintab == 'queuetab') {
+								setTimeout('loadqueue(true)',1000);
+							};
+						};
+					}
+				});
+			}
+
+			function loadfiles(reload) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=get_files&output=json&value='+SABid+'&session=$session',
+					success: function(response){
+						var o = Ext.decode(response.responseText);
+						Ext.getCmp('filestab').setTitle('Files('+o.files.length+')');
+						for (count=MyStore3.getCount();count<o.files.length;count++){
+							percentage = Math.round(100-o.files[count].mbleft/o.files[count].mb*100);
+							mbtogo = Math.round((o.files[count].mb-o.files[count].mbleft)*100)/100;
+							var MyRecord = new FileRecord(
+								{
+									status: o.files[count].status,
+									filename: o.files[count].filename,
+									percentage: '<div style="height:11px;border:1px dotted #000000"><div style="height:11px;font-size:9px;text-align:center;background:#FF6666;width:'+percentage+'%"></div></div>',
+									size: mbtogo+'/'+o.files[count].mb+' MB'+' ('+percentage+' %)'
+								 }
+							);
+							MyStore3.add(MyRecord);
+						}
+						for (count=0;count<o.files.length;count++){
+							percentage = Math.round(100-o.files[count].mbleft/o.files[count].mb*100);
+							mbtogo = Math.round((o.files[count].mb-o.files[count].mbleft)*100)/100;
+							MyStore3.getAt(count).set('status',o.files[count].status);
+							MyStore3.getAt(count).set('filename',o.files[count].filename);
+							MyStore3.getAt(count).set('percentage','<div style="height:11px;border:1px dotted #000000"><div style="height:11px;font-size:9px;text-align:center;background:#FF6666;width:'+percentage+'%"></div></div>');
+							MyStore3.getAt(count).set('size',mbtogo+'/'+o.files[count].mb+' MB'+' ('+percentage+' %)');
+						}
+
+						Ext.getCmp('filestab').setIconClass('file-icon');
+						if (reload) setTimeout('loadqueue(true)',1000);
+					}
+				});
+			}
+
+			function loadconnections(reload) {
+				Ext.Ajax.request({
+					url: 'connections/',
+					success: function(response){
+						var o = Ext.decode(response.responseText);
+						for (count=MyStore2.getCount();count<o.connections[0].threads.length;count++){
+							var MyRecord = new Ext.data.Record();
+							MyStore2.add(MyRecord);
+						};
+						for (count=o.connections[0].threads.length;count<MyStore2.getCount();count++){
+							MyStore2.removeAt(count);
+						};
+						for (count=0;count<o.connections[0].threads.length;count++){
+							MyStore2.getAt(count).set('thread',o.connections[0].threads[count].thread);
+							MyStore2.getAt(count).set('poster',o.connections[0].threads[count].poster);
+							MyStore2.getAt(count).set('part',o.connections[0].threads[count].part);
+						};
+						
+						Ext.getCmp('connectionstab').setIconClass('conection-icon');
+						if (reload) setTimeout('loadqueue(true)',1000);
+					}
+				});
+			}
+			
+			function loadwarnings(reload) {
+				Ext.Ajax.request({
+					url: 'tapi?mode=warnings&output=json&session=$session',
+					success: function(response){
+						var o = Ext.decode(response.responseText);
+						for (count=MyStore5.getCount();count<o.warnings.length;count++){
+							var MyRecord = new Ext.data.Record();
+							MyStore5.add(MyRecord);
+						};
+						for (count=o.warnings.length;count<MyStore5.getCount();count++){
+							MyStore5.removeAt(count);
+						};
+						for (count=0;count<o.warnings.length;count++){
+							MyStore5.getAt(count).set('warning',o.warnings[count]);
+						};
+						
+						Ext.getCmp('warningstab').setIconClass('warning-icon');
+						if (reload) setTimeout('loadqueue(true)',1000);
+					}
+				});
+			}
+
+/*-----------------------------------------Load function. Loads all data into the GUI.----------------------------------*/
+			function firstload() {
+				Ext.Ajax.request({
+					url: 'tapi?mode=queue&start=START&limit=LIMIT&output=json&session=$session',
+					success: function(response){
+						var o = Ext.decode(response.responseText);
+						Ext.getCmp('speed').setValue(o.queue.kbpersec);
+						Ext.getCmp('speedlimit').setValue(o.queue.speedlimit);
+						if (o.queue.status == 'Paused'){
+							Ext.getCmp('pausebutton').setText('Resume');
+							Ext.getCmp('pausebutton').setIcon('../static/images/play-big.png');
+						}
+
+						for (count=MyStore4.getCount();count<o.queue.categories.length;count++){
+							var MyRecord = new Ext.data.Record();
+							MyStore4.add(MyRecord);
+						}
+						for (count=0;count<o.queue.categories.length;count++){
+							MyStore4.getAt(count).set('id',count);
+							MyStore4.getAt(count).set('cat',o.queue.categories[count]);
+						}
+					}
+				});
+			}
+
+/*-----------------------------------------Mainpart. Renders main GUI---------------------------------------------------*/
+			Ext.onReady(function() {
+				var myWindow = new MyWindow({
+					renderTo: Ext.getBody()
+				});
+
+				var myWindow1 = new MyWindow1({
+					renderTo: Ext.getBody()
+				});
+				
+				var main = new SABmain({
+					renderTo: Ext.getDom('main')
+				});
+				
+				Ext.fly(document.body).on('contextmenu', onContextMenu);
+					function onContextMenu(e, target) {
+					e.preventDefault();
+				};
+				
+				firstload();
+				loadqueue(true);
+			});
+		</script>
+	</head>
+	<body>
+	</body>
+</html>

@@ -1,0 +1,94 @@
+<!--#set global $topmenu="config"#-->
+<!--#set global $statpath="../.."#-->
+<!--#set global $helpsubject="configure-categories"#-->
+<!--#include $webdir + "/inc_top.tmpl"#-->
+
+<!--#set global $submenu="categories"#-->
+<!--#include $webdir + "/inc_cmenu.tmpl"#-->
+
+<h2>$T('configCat')</h2>
+$T('explain-configCat')<br/>
+<!--#if $varExists('newzbinDetails')#-->
+    $T('explain-catNewzbin')<br/>
+    <!--#if not $have_cats#-->
+        <br/><a href="init_newzbin?session=$session">$T('link-initCat')</a><br/><br/>
+    <!--#end if#-->
+<!--#end if#-->
+$T('explain-relFolder') $defdir<br/>
+<br/>
+    <table id="catTable">
+        <tr>
+            <th></th>
+            <th>$T('category')</th>
+            <th>&nbsp;$T('mode')&nbsp;</th>
+            <th>&nbsp;$T('priority')&nbsp;</th>
+            <!--#if $script_list#--><th>$T('script')</th><!--#end if#-->
+            <th>$T('catFolderPath')</th>
+            <th><!--#if $varExists('newzbinDetails')#--> $T('catNewzbin')/ <!--#end if#--> $T('catGroups')</th>
+            <th></th>
+        </tr>
+    <!--#set $odd = False#-->
+    <!--#for $slot in $slotinfo#-->
+        <!--#set $odd = not $odd#-->
+        <tr class="<!--#if $odd then "odd" else "even"#-->">
+
+        <td><!--#if $slot.name#-->
+            <form action="delete" method="get">
+            <input type="hidden" value="$slot.name" name="name">
+            <input type="hidden" value="$session" name="session">
+            <input type="submit" value="$T('button-delCat')"></form>
+            <!--#end if#-->
+        </td>
+
+        <form action="save" method="get">
+        <input type="hidden" value="$slot.name" name="name">
+        <input type="hidden" value="$session" name="session">
+        <td><input type="text" name="newname" value="$slot.name"></td>
+
+        <td>
+            <select name="pp">
+                <optgroup label="$T('pp')">
+                    <option value=""  <!--#if $slot.pp == ""  then "selected" else ""#-->>$T('default')</option>
+                    <option value="0" <!--#if $slot.pp == "0" then "selected" else ""#-->>$T('pp-none')</option>
+                    <option value="1" <!--#if $slot.pp == "1" then "selected" else ""#-->>$T('pp-repair')</option>
+                    <option value="2" <!--#if $slot.pp == "2" then "selected" else ""#-->>$T('pp-unpack')</option>
+                    <option value="3" <!--#if $slot.pp == "3" then "selected" else ""#-->>$T('pp-delete')</option>
+                </optgroup>
+            </select>
+        </td>
+
+        <td>
+            <select name="priority">
+                <optgroup label="$T('priority')">
+                    <option value="-100" <!--#if $slot.priority == -100 then 'selected' else ''#-->>$T('default')</option>
+                    <option value="2" <!--#if $slot.priority == 2 then 'selected' else ''#-->>$T('pr-force')</option>
+                    <option value="1" <!--#if $slot.priority == 1 then 'selected' else ''#-->>$T('pr-high')</option>
+                    <option value="0" <!--#if $slot.priority == 0 then 'selected' else ''#-->>$T('pr-normal')</option>
+                    <option value="-1" <!--#if $slot.priority == -1 then 'selected' else ''#-->>$T('pr-low')</option>
+                </optgroup>
+            </select>
+        </td>
+
+        <!--#if $script_list#-->
+        <td>
+            <select name="script">
+            <optgroup label="$T('script')">
+            <!--#for $sc in $script_list#-->
+                <option value="$sc" <!--#if $slot.script.lower() == $sc.lower() then "selected" else ""#-->>$Tspec($sc)</option>
+            <!--#end for#-->
+            </optgroup>
+            </select>
+        </td>
+        <!--#end if#-->
+
+        <td><input type="text" size=30 name="dir" value="$slot.dir"></td>
+
+        <td><input type="text" size=30 name="newzbin" value="$slot.newzbin"></td>
+
+        <td><input type="submit" value="$T('button-save')"></td>
+        </form>
+
+    <!--#end for#-->
+    </table>
+
+<!--#include $webdir + "/inc_bottom.tmpl"#-->

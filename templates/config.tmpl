@@ -1,0 +1,20 @@
+<!--#set global $topmenu="config"#-->
+<!--#set global $statpath=".."#-->
+<!--#set global $helpsubject="Configure"#-->
+<!--#include $webdir + "/inc_top.tmpl"#-->
+
+<!--#set global $submenu=""#-->
+<!--#include $webdir + "/inc_cmenu.tmpl"#-->
+
+<h2>$T('configuration')</h2>
+<p>
+<b>$T('confgFile'):</b> $configfn
+</p>
+
+$T('explain-Restart')<br/><br/>
+
+<form action="saveGeneral" method="post">
+<input type="submit" onclick="this.form.action='restart?session=$session'; this.form.submit(); return false;" value="$T('button-restart')"/>
+</form>
+
+<!--#include $webdir + "/inc_bottom.tmpl"#-->
