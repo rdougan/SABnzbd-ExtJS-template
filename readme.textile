@@ -36,6 +36,18 @@ h3. If a user wants to pause a queue item:
 * button will have a handler which will call a method in queueController.js, for example: @pause: function(item) { //do stuff }@
 * button would call: @App.controllers.queueController.pause(item)@
 
+h3. Example application.js
+
+pre. Ext.ns('App', 'App.controllers', 'App.views', 'App.views.queue'); //etcetcetc
+App = Ext.extend(Ext.util.Observable, {
+    launch: function() {
+        this.fireEvent('launch', this);
+    }
+});
+Ext.onReady(function() {
+   App.launch(); 
+});
+
 h3. Example controller + view
 
 controller
@@ -48,13 +60,13 @@ pre. App.controllers.queueController = Ext.extend(Ext.util.Observable, {
     },
     /**/
     initListeners: function() {
-        App.on('load', this.load);.
+        //listen to app launch and load content
+        App.on('launch', this.load);.
     },
     /**/
     load: function() {
         //perform ajax request
         //this.store = bleh
-        
         this.fireEvent('load', this.store, this);
     } 
 });
