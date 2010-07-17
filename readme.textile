@@ -1,0 +1,40 @@
+h1. Structure
+
+//contains onReady
+application.js                          // initialises the app, contains a viewport/main border layout, contains variables to all controllers
+
+//all controllers extend Ext.util.Observable
+controllers/queueController.js          // contains all methods used for queue items (fetching, deleting, updating, pausing etc)
+controllers/historyController.js        // same as above
+controllers/fileController.js           // same as above
+controllers/connectionController.js     // same as above
+controllers/warningController.js        // same as above
+controllers/configController.js         // same as above
+
+//all views extend whatever they need to display. panel, window, grid etc
+views/queue/index.js                    // container for the queue grid and a tabpanel which contains file grid, connection grid and warning grid
+views/queue/grid.js                     // grid which will show queue items
+views/history/grid.js                   // grid which will show history items
+views/history/information.js            // panel which will show history information
+views/file/grid.js                      // grid which will show files
+views/connection/grid.js                // grid which will show connections
+views/warning/grid.js                   // grid which will show warnings
+
+views/config/index.js                   // main panel/window of config stuff
+views/config/*.js                       // all other config views
+
+
+h1. Example scenarios:
+
+h3. Application startup:
+* everything loads
+* application.js fires off an event to say everything has loaded
+* queueController listens to that event and loads all queue items
+
+h3. If a user wants to pause a queue item:
+* user clicks a button, which will be in a view
+* button will have a handler which will call a method in queueController.js, for example:
+* @pause: function(item) {
+    //do stuff
+}@
+* button would call: @App.controllers.QueueController.pause(item)@
