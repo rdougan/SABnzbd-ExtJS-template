@@ -39,6 +39,7 @@ h3. If a user wants to pause a queue item:
 h3. Example controller + view
 
 controller
+
 pre. App.controllers.queueController = Ext.extend(Ext.util.Observable, {
     /**/
     constructor: function(config) {
@@ -59,6 +60,7 @@ pre. App.controllers.queueController = Ext.extend(Ext.util.Observable, {
 });
 
 view
+
 pre. App.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
     /**/
     constructor: function(config) {
