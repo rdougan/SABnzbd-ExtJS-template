@@ -38,20 +38,37 @@ h3. If a user wants to pause a queue item:
 
 h3. Example controller + view
 
+controller
 pre. App.controllers.queueController = Ext.extend(Ext.util.Observable, {
+    /**/
     constructor: function(config) {
-        //call superclass
+        //call superclass here
         this.initListeners();
     },
-    
+    /**/
     initListeners: function() {
-        App.on('load', this.load);
+        App.on('load', this.load);.
     },
-
+    /**/
     load: function() {
         //perform ajax request
         //this.store = bleh
         
         this.fireEvent('load', this.store, this);
     } 
+});
+
+view
+pre. App.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
+    /**/
+    constructor: function(config) {
+        //call superclass here
+        this.initListeners();
+    },
+    /**/
+    initListeners: function() {
+        App.controllers.queueController.on('load', function(store) {
+            //load store into grid
+        }, this);
+    }
 });
