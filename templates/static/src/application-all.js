@@ -46,8 +46,8 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
     
     SABnzbd.application.superclass.constructor.call(this);
     
-    this.initControllers.defer(100);
-    this.initViewport();
+    this.initControllers.defer(100, this);
+    this.initViewport.defer(100, this);
     
     //fire the launch event
     this.fireEvent('launch', this);
@@ -58,7 +58,7 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
    */
   initControllers: function() {
     for (controller in SABnzbd.controllers) {
-      this[controller] = new SABnzbd.controllers[controller];
+      this.controllers[controller] = new SABnzbd.controllers[controller];
     };
   },
   
@@ -128,16 +128,63 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.Application
     this.load();
   },
   
+  // avg_age: "607d"
+  // cat: "tv"
+  // eta: "03:40 Sun 18 Jul"
+  // filename: "The.Big.Bang.Theory.S02E08.720p.HDTV.x264-CTU"
+  // index: 0
+  // mb: "638.73"
+  // mbleft: "258.21"
+  // msgid: ""
+  // nzo_id: "SABnzbd_nzo_w6DpBr"
+  // percentage: "59"
+  // priority: "Normal"
+  // script: "None"
+  // size: "638.73 MB"
+  // sizeleft: "258.21 MB"
+  // status: "Downloading"
+  // timeleft: "0:39:34"
+  // unpackopts: "3"
+  // verbosity: ""
+  
   /**
    * 
    */
   load: function() {
     Ext.Ajax.request({
-			url    : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
+			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
+			scope: this,
+			
 			success: function(response) {
-				var o = Ext.decode(response.responseText);
+				var o     = Ext.decode(response.responseText),
+				    slots = o.queue.slots || [];
 				
-				console.log(o);
+				this.store = new Ext.data.JsonStore({
+				  idIndex: 0,
+				  data   : slots,
+				  
+				  fields: [
+  			    {name:'index',      mapping:'index', type:'int'},
+				    {name:'avg_age',    mapping:'avg_age'},
+				    {name:'cat',        mapping:'cat'},
+				    {name:'eta',        mapping:'eta'},
+				    {name:'filename',   mapping:'filename'},
+				    {name:'mb',         mapping:'mb'},
+				    {name:'mbleft',     mapping:'mbleft'},
+				    {name:'msgid',      mapping:'msgid'},
+				    {name:'percentage', mapping:'percentage'},
+				    {name:'priority',   mapping:'priority'},
+				    {name:'script',     mapping:'script'},
+				    {name:'size',       mapping:'size'},
+				    {name:'sizeleft',   mapping:'sizeleft'},
+				    {name:'timeleft',   mapping:'timeleft'},
+				    {name:'unpackopts', mapping:'unpackopts'},
+				    {name:'verbosity',  mapping:'verbosity'}
+				  ]
+				});
+				
+				this.fireEvent('load', this.store);
+				
 				return;
 				
 				Ext.getCmp('warningstab').setTitle('Warnings('+o.queue.have_warnings+')');
@@ -399,6 +446,11 @@ SABnzbd.views.queue.Index = Ext.extend(Ext.Panel, {
       
       defaults: {border:false},
       
+      layout: 'fit',
+      
+      // autoHeight: true,
+      // autoScroll: true,
+      
       items: [
         this.grid
       ]
@@ -430,7 +482,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
 				singleSelect: true,
 				listeners   : {
 					beforerowselect: function(sm, i, ke, row){
-						Ext.getCmp('queuegrid').ddText = row.get('filename');
+            // Ext.getCmp('queuegrid').ddText = row.get('filename');
 					}
 				}
 			}),
@@ -529,7 +581,13 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
    * 
    */
   initListeners: function() {
-    
+    App.controllers.QueueController.on({
+      scope: this,
+      
+      load: function(store) {
+        this.reconfigure(store, this.getColumnModel());
+      }
+    });
   }
 });
 

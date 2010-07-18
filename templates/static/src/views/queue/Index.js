@@ -17,6 +17,11 @@ SABnzbd.views.queue.Index = Ext.extend(Ext.Panel, {
       
       defaults: {border:false},
       
+      layout: 'fit',
+      
+      // autoHeight: true,
+      // autoScroll: true,
+      
       items: [
         this.grid
       ]

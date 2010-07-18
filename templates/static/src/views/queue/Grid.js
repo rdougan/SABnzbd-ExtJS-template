@@ -20,7 +20,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
 				singleSelect: true,
 				listeners   : {
 					beforerowselect: function(sm, i, ke, row){
-						Ext.getCmp('queuegrid').ddText = row.get('filename');
+            // Ext.getCmp('queuegrid').ddText = row.get('filename');
 					}
 				}
 			}),
@@ -119,6 +119,12 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
    * 
    */
   initListeners: function() {
-    
+    App.controllers.QueueController.on({
+      scope: this,
+      
+      load: function(store) {
+        this.reconfigure(store, this.getColumnModel());
+      }
+    });
   }
 });

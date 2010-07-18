@@ -40,8 +40,8 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
     
     SABnzbd.application.superclass.constructor.call(this);
     
-    this.initControllers.defer(100);
-    this.initViewport();
+    this.initControllers.defer(100, this);
+    this.initViewport.defer(100, this);
     
     //fire the launch event
     this.fireEvent('launch', this);
@@ -52,7 +52,7 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
    */
   initControllers: function() {
     for (controller in SABnzbd.controllers) {
-      this[controller] = new SABnzbd.controllers[controller];
+      this.controllers[controller] = new SABnzbd.controllers[controller];
     };
   },
   
