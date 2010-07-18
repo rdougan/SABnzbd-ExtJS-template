@@ -1,3 +1,20 @@
+h1. Running the app
+
+* Open a REAL SABnzbd session
+* get the session key
+* add the session key to template/static/src/boot.js
+* load template/static/index.html
+
+h1. Building JS files
+
+Javascript files are all loaded into 1 file. They are also minified for production to cut down on file size
+
+To build the js file, you need to run this command from the terminal, in the template/static folder:
+@ruby scripts/build all@
+
+You can also set it up to automatically build when you modify any file specified in template/static/boot (all files including in combined file):
+@ruby scripts/build auto all@
+
 h1. Structure
 
 //contains onReady
