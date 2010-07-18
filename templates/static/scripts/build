@@ -1,0 +1,4 @@
+require 'fileutils'
+require 'vendor/mvc/scripts/scripts'
+
+ExtMVC::BuilderManager.dispatch
