@@ -5,126 +5,113 @@
  */
 SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
 
-  initComponent: function() {
-    Ext.applyIf(this, {
-      store           : new Ext.data.Store(),
-      
-      autoExpandColumn: 'filename',
-			margins         : '0 0 10 0',
-			enableDragDrop  : true,
-			
-			ddGroup         : 'queue-dd',
-			ddText          : 'Place this row.',
-			
+	initComponent: function() {
+		this.Tbar = new SABnzbd.views.queue.Tbar();
+    
+		Ext.applyIf(this, {
+			store: new Ext.data.Store(),
+			enableDragDrop : true,
+			ddGroup: 'queue-dd',
+			ddText: 'Place this row.',
 			sm: new Ext.grid.RowSelectionModel({
 				singleSelect: true,
-				listeners   : {
+				listeners: {
 					beforerowselect: function(sm, i, ke, row){
-            // Ext.getCmp('queuegrid').ddText = row.get('filename');
+						// Ext.getCmp('queuegrid').ddText = row.get('filename');
 					}
 				}
 			}),
-			
+
 			columns: [
 				{
-					sortable    : true,
-					resizable   : true,
-					width       : 55,
-					dataIndex   : 'buttons',
-					menuDisabled: true
+					header: 'Control',
+					sortable: false,
+					width: 55,
+					resizable: false,
+					dataIndex: 'buttons'
 				},
 				{
-					header      : 'Category',
-					sortable    : true,
-					resizable   : true,
-					width       : 60,
-					dataIndex   : 'cat',
-					menuDisabled: true
-          // editor: {
-          //  xtype: 'combo',
-          //  fieldLabel: 'Label',
-          //  store: new Ext.data.Store(),
-          //  triggerAction: 'all',
-          //  mode: 'local',
-          //  displayField: 'cat',
-          //  id: 'queuecat'
-          // }
+					header: 'Category',
+					sortable: false,
+					width: 60,
+					dataIndex: 'cat'
+					// editor: {
+						//  xtype: 'combo',
+						//  fieldLabel: 'Label',
+						//  store: new Ext.data.Store(),
+						//  triggerAction: 'all',
+						//  mode: 'local',
+						//  displayField: 'cat',
+						//  id: 'queuecat'
+					// }
 				},
 				{
-					header      : 'File',
-					sortable    : true,
-					resizable   : true,
-					width       : 100,
-					dataIndex   : 'filename',
-					menuDisabled: true
-          // editor: {
-          //  xtype: 'textfield',
-          //  fieldLabel: 'Label',
-          //  id: 'queuename'
-          // }
+					header: 'File',
+					sortable: false,
+					width: 300,
+					dataIndex: 'filename',
+					ColumnID: 'filename'
+					//editor: {
+					//	xtype: 'textfield',
+					//	fieldLabel: 'Label',
+					//	id: 'queuename'
+					//}
 				},
 				{
-					header      : 'Status',
-					sortable    : true,
-					resizable   : true,
-					width       : 100,
-					dataIndex   : 'status',
-					align       : 'center',
-					menuDisabled: true
+					header: 'Status',
+					sortable: false,
+					width: 100,
+					dataIndex: 'status',
+					align: 'center'
 				},
 				{
-					sortable    : true,
-					resizable   : true,
-					width       : 150,
-					dataIndex   : 'percentage',
-					format      : '00 %',
-					menuDisabled: true
+					header: 'Percentage',
+					sortable: false,
+					width: 150,
+					dataIndex: 'percentage',
+					align: 'center'
 				},
 				{
-					header      : 'Total size',
-					sortable    : true,
-					resizable   : true,
-					width       : 150,
-					dataIndex   : 'size',
-					align       : 'right',
-					menuDisabled: true
+					header: 'Total size',
+					sortable: false,
+					width: 150,
+					dataIndex: 'size',
+					align: 'right'
 				},
 				{
-					header      : 'ETA',
-					sortable    : true,
-					resizable   : true,
-					width       : 100,
-					dataIndex   : 'timeleft',
-					align       : 'right',
-					menuDisabled: true
+					header: 'ETA',
+					sortable: false,
+					width: 100,
+					dataIndex: 'timeleft',
+					align: 'right'
 				},
 				{
-					header      : 'Age',
-					sortable    : true,
-					resizable   : true,
-					width       : 100,
-					dataIndex   : 'avg_age',
-					align       : 'right',
-					menuDisabled: true
+					header: 'Age',
+					sortable: false,
+					width: 100,
+					dataIndex: 'avg_age',
+					align: 'right'
 				}
-			]
-    });
+			],
+			tbar: this.Tbar
+		});
     
-    SABnzbd.views.queue.Grid.superclass.initComponent.apply(this, arguments);
+		SABnzbd.views.queue.Grid.superclass.initComponent.apply(this, arguments);
     
-    this.initListeners();
-  },
+		this.initListeners();
+	},
   
-  /**
-   * 
-   */
-  initListeners: function() {
-    App.controllers.QueueController.on({
-      scope: this,
+	/**
+	* 
+	*/
+	initListeners: function() {
+
+		App.controllers.QueueController.on({
+			scope: this,
       
-      load: function(store) {
-        this.reconfigure(store, this.getColumnModel());
-      }
-    });
-  }
+			load: function(store) {
+				this.reconfigure(store, this.getColumnModel());
+			}
+		});
+	}
 });

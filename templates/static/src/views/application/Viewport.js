@@ -5,60 +5,62 @@
  */
 SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 
-  initComponent: function() {
-    /**
-     * @property menu
-     * The menu at the top of the view
-     */
-    this.menu = new SABnzbd.views.application.Menu({
-      region: 'north'
-    });
+	initComponent: function() {
+		/**
+		 * @property menu
+		 * The menu at the top of the view
+		 */
+		this.head = new SABnzbd.views.application.Head({
+			region: 'north'
+		});
     
-    /**
-     * @property queue
-     * The main queue view
-     */
-    this.queue = new SABnzbd.views.queue.Index();
+		/**
+		 * @property queue
+		 * The main queue view
+		 */
+		this.queue = new SABnzbd.views.queue.Index();
+		this.history = new SABnzbd.views.history.Index();
     
-    /**
-     * @property file
-     * the file list grid
-     */
-    this.file = new SABnzbd.views.file.Grid();
+		/**
+		 * @property file
+		 * the file list grid
+		 */
+		this.file = new SABnzbd.views.file.Grid();
     
-    Ext.applyIf(this, {
-      layout: 'border',
+		Ext.applyIf(this, {
+			layout: 'border',
       
-      defaults: {border:false},
+			defaults: {border:false},
       
-      items: [
-        this.menu,
-        {
-          region: 'center',
-          xtype : 'tabpanel',
+			items: [
+				this.head,
+				{
+					region: 'center',
+					xtype : 'tabpanel',
           
-          border   : true,
-          bodyStyle: 'border-width:1px 0',
-          activeTab: 0,
+					border   : false,
+					bodyStyle: 'border-width:1px 0',
+					activeTab: 0,
           
-          items: [
-            this.queue
-          ]
-        },
-        {
-          region: 'south',
-          xtype : 'tabpanel',
+					items: [
+						this.queue,
+						this.history
+					]
+				},
+				{
+					region: 'south',
+					xtype : 'tabpanel',
           
-          height   : 200,
-          activeTab: 0,
+					height   : 200,
+					activeTab: 0,
           
-          items: [
-            this.file
-          ]
-        }
-      ]
-    });
+					items: [
+						this.file
+					]
+				}
+			]
+		});
     
-    SABnzbd.views.application.Viewport.superclass.initComponent.apply(this, arguments);
-  }
+		SABnzbd.views.application.Viewport.superclass.initComponent.apply(this, arguments);
+	}
 });

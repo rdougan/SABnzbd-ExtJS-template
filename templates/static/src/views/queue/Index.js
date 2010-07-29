@@ -5,28 +5,25 @@
  */
 SABnzbd.views.queue.Index = Ext.extend(Ext.Panel, {
 
-  initComponent: function() {
-    /**
-     * @property grid
-     * The download grid
-     */
-    this.grid = new SABnzbd.views.queue.Grid();
+	initComponent: function() {
+		/**
+		* @property grid
+		* The download grid
+		*/
+		this.grid = new SABnzbd.views.queue.Grid();
     
-    Ext.applyIf(this, {
-      title: 'Queue',
+		Ext.applyIf(this, {
+			title: 'Queue',
       
-      defaults: {border:false},
+			defaults: {border:false},
       
-      layout: 'fit',
+			layout: 'fit',
       
-      // autoHeight: true,
-      // autoScroll: true,
-      
-      items: [
-        this.grid
-      ]
-    });
+			items: [
+				this.grid
+			]
+		});
     
-    SABnzbd.views.queue.Index.superclass.initComponent.apply(this, arguments);
-  }
+		SABnzbd.views.queue.Index.superclass.initComponent.apply(this, arguments);
+	}
 });
