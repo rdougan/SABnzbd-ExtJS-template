@@ -3,7 +3,7 @@
  * @extends Ext.util.Observable
  * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.ApplicationController, {
+SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
 	* 
 	*/

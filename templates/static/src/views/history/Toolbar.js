@@ -22,13 +22,17 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'button',
 					text: 'Shutdown',
 					icon: 'static/images/quit.png',
-					disabled: true
+					handler: function() {
+						App.controllers.ApplicationController.shutdown();
+					}
 				},
 				{
 					xtype: 'button',
 					text: 'Restart',
 					icon: 'static/images/restart.png',
-					disabled: true
+					handler: function() {
+						App.controllers.ApplicationController.restart();
+					}
 				},
 				{
 					xtype: 'tbseparator'

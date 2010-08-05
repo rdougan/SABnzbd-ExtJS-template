@@ -69,11 +69,11 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
 });
 
 /**
- * @class SABnzbd.controllers.ApplicationController
+ * @class SABnzbd.controllers.BaseController
  * @extends Ext.util.Observable
  * Main application controller. All other controllers should extend this class.
  */
-SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
+SABnzbd.controllers.BaseController = Ext.extend(Ext.util.Observable, {
 	/**
 	 * 
 	 */
@@ -98,6 +98,41 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	}
 });
 
+/**
+ * @class SABnzbd.controllers.HistoryController
+ * @extends Ext.util.Observable
+ * Controls anything to do with the main download queue
+ */
+SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseController, {
+	/**
+	* 
+	*/
+	initListeners: function() {
+    
+	},
+  
+	/**
+	* 
+	*/
+	init: function() {
+
+	},
+    
+	restart: function() {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=restart&session={1}', App.host || '', SessionKey),
+		});
+		Ext.Msg.wait('The system is restarting. Refresh the browser in a few seconds');
+	},
+	
+	shutdown: function() {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=shutdown&session={1}', App.host || '', SessionKey),
+		});
+		Ext.Msg.wait('The system is shuting down. You can now close the browser');
+	}
+});
+
 
 
 
@@ -109,7 +144,7 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
  * @extends Ext.util.Observable
  * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.ApplicationController, {
+SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
 	* 
 	*/
@@ -200,7 +235,7 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.Applicati
  * @extends Ext.util.Observable
  * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.ApplicationController, {
+SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
 	* 
 	*/
@@ -273,10 +308,11 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.Application
 	
 	/*
 	 * The updater updates the queue grid. This should also update the file grid,
-	 * the history gid etc. Maby this should be moved to another controller?
+	 * the history grid etc. Maybe this should be moved to another controller?
 	 */
 	updater: function() {
-		setTimeout("App.controllers.QueueController.reload(true);",1000);
+		var scope = this;
+		setTimeout(function() { scope.reload(true); }, 1000);
 	},
 
 	/*
@@ -326,20 +362,6 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.Application
 				if (reload) App.controllers.QueueController.fireEvent('updater');
 			}
 		});
-	},
-	
-	restart: function() {
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=restart&session={1}', App.host || '', SessionKey),
-		});
-		Ext.Msg.wait('The system is restarting. Refresh the browser in a few seconds');
-	},
-	
-	shutdown: function() {
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=shutdown&session={1}', App.host || '', SessionKey),
-		});
-		Ext.Msg.wait('The system is shuting down. You can now close the browser');
 	},
 	
 	clear: function() {
@@ -651,13 +673,17 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'button',
 					text: 'Shutdown',
 					icon: 'static/images/quit.png',
-					disabled: true
+					handler: function() {
+						App.controllers.ApplicationController.shutdown();
+					}
 				},
 				{
 					xtype: 'button',
 					text: 'Restart',
 					icon: 'static/images/restart.png',
-					disabled: true
+					handler: function() {
+						App.controllers.ApplicationController.restart();
+					}
 				},
 				{
 					xtype: 'tbseparator'
@@ -924,7 +950,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					text: 'Shutdown',
 					icon: 'static/images/quit.png',
 					handler: function() {
-						App.controllers.QueueController.shutdown();
+						App.controllers.ApplicationController.shutdown();
 					}
 				},
 				{
@@ -932,7 +958,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					text: 'Restart',
 					icon: 'static/images/restart.png',
 					handler: function() {
-						App.controllers.QueueController.restart();
+						App.controllers.ApplicationController.restart();
 					}
 				},
 				{

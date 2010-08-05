@@ -3,7 +3,7 @@
  * @extends Ext.util.Observable
  * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.ApplicationController, {
+SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
 	* 
 	*/
@@ -76,10 +76,11 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.Application
 	
 	/*
 	 * The updater updates the queue grid. This should also update the file grid,
-	 * the history gid etc. Maby this should be moved to another controller?
+	 * the history grid etc. Maybe this should be moved to another controller?
 	 */
 	updater: function() {
-		setTimeout("App.controllers.QueueController.reload(true);",1000);
+		var scope = this;
+		setTimeout(function() { scope.reload(true); }, 1000);
 	},
 
 	/*
@@ -129,20 +130,6 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.Application
 				if (reload) App.controllers.QueueController.fireEvent('updater');
 			}
 		});
-	},
-	
-	restart: function() {
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=restart&session={1}', App.host || '', SessionKey),
-		});
-		Ext.Msg.wait('The system is restarting. Refresh the browser in a few seconds');
-	},
-	
-	shutdown: function() {
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=shutdown&session={1}', App.host || '', SessionKey),
-		});
-		Ext.Msg.wait('The system is shuting down. You can now close the browser');
 	},
 	
 	clear: function() {

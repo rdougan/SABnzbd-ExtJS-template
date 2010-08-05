@@ -1,29 +1,34 @@
 /**
- * @class SABnzbd.controllers.ApplicationController
+ * @class SABnzbd.controllers.HistoryController
  * @extends Ext.util.Observable
- * Main application controller. All other controllers should extend this class.
+ * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
+SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
-	 * 
-	 */
-	constructor: function() {
-		SABnzbd.application.superclass.constructor.call(this);
-    
-		//init any specified listeners
-		this.initListeners();
-    
-		//init the controller
-		this.init();
-	},
-  
-	//this should be overwritten if needed
+	* 
+	*/
 	initListeners: function() {
     
 	},
   
-	//this should be overwritten
+	/**
+	* 
+	*/
 	init: function() {
+
+	},
     
+	restart: function() {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=restart&session={1}', App.host || '', SessionKey),
+		});
+		Ext.Msg.wait('The system is restarting. Refresh the browser in a few seconds');
+	},
+	
+	shutdown: function() {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=shutdown&session={1}', App.host || '', SessionKey),
+		});
+		Ext.Msg.wait('The system is shuting down. You can now close the browser');
 	}
 });

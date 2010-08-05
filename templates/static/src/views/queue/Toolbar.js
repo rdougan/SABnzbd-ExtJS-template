@@ -68,7 +68,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					text: 'Shutdown',
 					icon: 'static/images/quit.png',
 					handler: function() {
-						App.controllers.QueueController.shutdown();
+						App.controllers.ApplicationController.shutdown();
 					}
 				},
 				{
@@ -76,7 +76,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					text: 'Restart',
 					icon: 'static/images/restart.png',
 					handler: function() {
-						App.controllers.QueueController.restart();
+						App.controllers.ApplicationController.restart();
 					}
 				},
 				{
