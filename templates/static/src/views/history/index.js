@@ -14,6 +14,8 @@ SABnzbd.views.history.Index = Ext.extend(Ext.Panel, {
     
 		Ext.applyIf(this, {
 			title: 'History',
+			
+			itemId: 'history',
       
 			defaults: {border:false},
       

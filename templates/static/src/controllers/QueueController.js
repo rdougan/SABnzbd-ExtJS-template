@@ -8,7 +8,6 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	* 
 	*/
 	initListeners: function() {
-		this.on('updater',this.updater,this);
 	},
   
 	/**
@@ -69,18 +68,14 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				});
 				
 				this.fireEvent('load', this.store);
-				this.fireEvent('updater');
+				this.fireEvent('speed', o.queue.kbpersec);
+				this.fireEvent('limit', o.queue.speedlimit);
+				this.fireEvent('status', o.queue.status);
+				App.controllers.ApplicationController.fireEvent('updater');
+
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store loaded');
 			}
 		});
-	},
-	
-	/*
-	 * The updater updates the queue grid. This should also update the file grid,
-	 * the history grid etc. Maybe this should be moved to another controller?
-	 */
-	updater: function() {
-		var scope = this;
-		setTimeout(function() { scope.reload(true); }, 1000);
 	},
 
 	/*
@@ -89,6 +84,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	 * and messes up the grid scrolling.
 	 */
 	reload: function (reload) {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
 		Ext.Ajax.request({
 			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
 			scope: App.viewport.queue.grid,
@@ -127,7 +125,13 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 					this.store.getAt(count).set('cat',slots[count].cat);
 					this.store.getAt(count).set('status',App.controllers.QueueController.status(count,slots[count]));
 				}
-				if (reload) App.controllers.QueueController.fireEvent('updater');
+
+				App.controllers.QueueController.fireEvent('speed', o.queue.kbpersec);
+				App.controllers.QueueController.fireEvent('status', o.queue.status);
+				if (reload) App.controllers.ApplicationController.fireEvent('updater');
+
+				var currentTime = new Date()
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store updated ('+(currentTime.getTime()-starttime)+' ms)');
 			}
 		});
 	},
@@ -139,5 +143,17 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				App.controllers.QueueController.reload();
 			}
 		});
+	},
+	
+	limitspeed: function(t) {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', App.host || '', t.getValue(), SessionKey),
+		});
+	},
+	
+	specialkey: function(t, e) {
+		if (e.getKey() == e.ENTER) {
+			t.blur();
+		}
 	}
 });

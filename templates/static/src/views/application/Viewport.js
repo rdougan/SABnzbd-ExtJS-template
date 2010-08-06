@@ -26,6 +26,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 		 * the file list grid
 		 */
 		this.file = new SABnzbd.views.file.Grid();
+		this.debug = new SABnzbd.views.debug.Panel();
     
 		Ext.applyIf(this, {
 			layout: 'border',
@@ -45,17 +46,26 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 					items: [
 						this.queue,
 						this.history
-					]
+					],
+					
+					listeners: {
+						tabchange: function(t, p) {
+							App.controllers.ApplicationController.fireEvent('maintabchange',p.getItemId());
+						}
+					}
+
 				},
 				{
 					region: 'south',
 					xtype : 'tabpanel',
+					deferredRender: false,
           
 					height   : 200,
 					activeTab: 0,
           
 					items: [
-						this.file
+						this.file,
+						this.debug
 					]
 				}
 			]

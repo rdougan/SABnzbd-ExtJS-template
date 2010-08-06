@@ -22,6 +22,8 @@ src/views/connection/Grid.js
 
 src/views/file/Grid.js
 
+src/views/debug/panel.js
+
 src/views/history/Index.js
 src/views/history/Grid.js
 src/views/history/Toolbar.js

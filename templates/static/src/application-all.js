@@ -14,7 +14,8 @@ Ext.ns(
 	'SABnzbd.views.file',
 	'SABnzbd.views.connection',
 	'SABnzbd.views.warning',
-	'SABnzbd.views.config'
+	'SABnzbd.views.config',
+	'SABnzbd.views.debug'
 );
 
 /**
@@ -99,16 +100,19 @@ SABnzbd.controllers.BaseController = Ext.extend(Ext.util.Observable, {
 });
 
 /**
- * @class SABnzbd.controllers.HistoryController
+ * @class SABnzbd.controllers.ApplicationController
  * @extends Ext.util.Observable
- * Controls anything to do with the main download queue
+ * Controls anything to do with the main application
  */
 SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
 	* 
 	*/
+		
 	initListeners: function() {
-    
+		this.on('updater',this.updater);
+		this.on('maintabchange',this.maintabchange);
+		this.on('debugmsg',this.debugmsg);
 	},
   
 	/**
@@ -118,6 +122,40 @@ SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseC
 
 	},
     
+	maintab: '',
+	
+	maintabchange: function(tabname) {
+		this.maintab = tabname;
+	},
+
+	debugmsg: function(msg) {
+		var currentTime = new Date();
+		var hours = currentTime.getHours();
+		if (hours < 10)
+			hours = '0' + hours;
+		var minutes = currentTime.getMinutes();
+		if (minutes < 10)
+			minutes = '0' + minutes;
+		var seconds = currentTime.getSeconds();
+		if (seconds < 10)
+			seconds = '0' + seconds;
+
+		time = hours+':'+minutes+':'+seconds;
+
+		App.viewport.debug.body.insertHtml('afterBegin',time+' - '+msg+'<br>');
+	},
+	
+	updater: function() {
+		setTimeout(function() {
+			scope = App.controllers.ApplicationController;
+			
+			if (scope.maintab == 'history')
+				App.controllers.HistoryController.reload(true);
+			if (scope.maintab == 'queue')
+				App.controllers.QueueController.reload(true);
+		}, 1000);
+	},
+
 	restart: function() {
 		Ext.Ajax.request({
 			url: String.format('{0}tapi?mode=restart&session={1}', App.host || '', SessionKey),
@@ -223,11 +261,72 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				});
 				
 				this.fireEvent('load', this.store);
-				
-				return;
+
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store loaded');
 			}
 		});
-  }
+	},
+
+	reload: function (reload) {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
+		Ext.Ajax.request({
+			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
+			scope: App.viewport.history.grid,
+			
+			success: function(response){
+				var o = Ext.decode(response.responseText);
+				slots = o.history.slots || [];
+					
+				for (count=this.store.getCount();count<slots.length;count++){
+					var MyRecord = new Ext.data.Record();
+					this.store.add(MyRecord);
+				}
+				
+				for (count=slots.length;count<this.store.getCount();count++){
+					this.store.removeAt(count);
+				}
+				
+				for (count=0;count<slots.length;count++){					
+					this.store.getAt(count).set('action_line',slots[count].action_line);
+					this.store.getAt(count).set('show_details',slots[count].show_details);
+					this.store.getAt(count).set('script_log',slots[count].script_log);
+					this.store.getAt(count).set('meta',slots[count].meta);
+					this.store.getAt(count).set('fail_message',slots[count].fail_message);
+					this.store.getAt(count).set('loaded',slots[count].loaded);
+					this.store.getAt(count).set('id',slots[count].id);
+					this.store.getAt(count).set('size',slots[count].size);
+					this.store.getAt(count).set('category',slots[count].category);
+					this.store.getAt(count).set('pp',slots[count].pp);
+					this.store.getAt(count).set('completeness',slots[count].completeness);
+					this.store.getAt(count).set('script',slots[count].script);
+					this.store.getAt(count).set('nzb_name',slots[count].nzb_name);
+					this.store.getAt(count).set('download_time',slots[count].download_time);
+					this.store.getAt(count).set('storage',slots[count].storage);
+					this.store.getAt(count).set('status',slots[count].status+' '+slots[count].action_line);
+					this.store.getAt(count).set('script_line',slots[count].script_line);
+					this.store.getAt(count).set('nzo_id',slots[count].nzo_id);
+					this.store.getAt(count).set('downloaded',slots[count].downloaded);
+					this.store.getAt(count).set('report',slots[count].report);
+					this.store.getAt(count).set('path',slots[count].path);
+					this.store.getAt(count).set('postproc_time',slots[count].postproc_time);
+					this.store.getAt(count).set('name',slots[count].name);
+					this.store.getAt(count).set('url',slots[count].url);
+					this.store.getAt(count).set('bytes',slots[count].bytes);
+					this.store.getAt(count).set('url_info',slots[count].url_info);
+					this.store.getAt(count).set('completed',App.controllers.HistoryController.convertTime(count,slots[count]));
+				}
+
+				App.controllers.QueueController.fireEvent('speed', o.history.kbpersec);
+				App.controllers.QueueController.fireEvent('status', o.history.status);
+				if (reload) App.controllers.ApplicationController.fireEvent('updater');
+
+				var currentTime = new Date()
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store updated ('+(currentTime.getTime()-starttime)+' ms)');
+			}
+		});
+	}
 });
 
 /**
@@ -240,7 +339,6 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	* 
 	*/
 	initListeners: function() {
-		this.on('updater',this.updater,this);
 	},
   
 	/**
@@ -301,18 +399,14 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				});
 				
 				this.fireEvent('load', this.store);
-				this.fireEvent('updater');
+				this.fireEvent('speed', o.queue.kbpersec);
+				this.fireEvent('limit', o.queue.speedlimit);
+				this.fireEvent('status', o.queue.status);
+				App.controllers.ApplicationController.fireEvent('updater');
+
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store loaded');
 			}
 		});
-	},
-	
-	/*
-	 * The updater updates the queue grid. This should also update the file grid,
-	 * the history grid etc. Maybe this should be moved to another controller?
-	 */
-	updater: function() {
-		var scope = this;
-		setTimeout(function() { scope.reload(true); }, 1000);
 	},
 
 	/*
@@ -321,6 +415,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	 * and messes up the grid scrolling.
 	 */
 	reload: function (reload) {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
 		Ext.Ajax.request({
 			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
 			scope: App.viewport.queue.grid,
@@ -359,7 +456,13 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 					this.store.getAt(count).set('cat',slots[count].cat);
 					this.store.getAt(count).set('status',App.controllers.QueueController.status(count,slots[count]));
 				}
-				if (reload) App.controllers.QueueController.fireEvent('updater');
+
+				App.controllers.QueueController.fireEvent('speed', o.queue.kbpersec);
+				App.controllers.QueueController.fireEvent('status', o.queue.status);
+				if (reload) App.controllers.ApplicationController.fireEvent('updater');
+
+				var currentTime = new Date()
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store updated ('+(currentTime.getTime()-starttime)+' ms)');
 			}
 		});
 	},
@@ -371,6 +474,18 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				App.controllers.QueueController.reload();
 			}
 		});
+	},
+	
+	limitspeed: function(t) {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', App.host || '', t.getValue(), SessionKey),
+		});
+	},
+	
+	specialkey: function(t, e) {
+		if (e.getKey() == e.ENTER) {
+			t.blur();
+		}
 	}
 });
 
@@ -431,6 +546,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 		 * the file list grid
 		 */
 		this.file = new SABnzbd.views.file.Grid();
+		this.debug = new SABnzbd.views.debug.Panel();
     
 		Ext.applyIf(this, {
 			layout: 'border',
@@ -450,17 +566,26 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 					items: [
 						this.queue,
 						this.history
-					]
+					],
+					
+					listeners: {
+						tabchange: function(t, p) {
+							App.controllers.ApplicationController.fireEvent('maintabchange',p.getItemId());
+						}
+					}
+
 				},
 				{
 					region: 'south',
 					xtype : 'tabpanel',
+					deferredRender: false,
           
 					height   : 200,
 					activeTab: 0,
           
 					items: [
-						this.file
+						this.file,
+						this.debug
 					]
 				}
 			]
@@ -539,6 +664,33 @@ SABnzbd.views.file.Grid = Ext.extend(Ext.grid.GridPanel, {
 });
 
 /**
+ * @class SABnzbd.views.queue.Index
+ * @extends Ext.Panel
+ * The main queue panel
+ */
+SABnzbd.views.debug.Panel = Ext.extend(Ext.Panel, {
+
+	initComponent: function() {
+		/**
+		* @property grid
+		* The download grid
+		*/
+		Ext.applyIf(this, {
+			title: 'Debug',
+      
+			defaults: {border:false},
+      
+			layout: 'fit',
+			
+			autoScroll: true
+      
+		});
+    
+		SABnzbd.views.debug.Panel.superclass.initComponent.apply(this, arguments);
+	}
+});
+
+/**
  * @class SABnzbd.views.history.Index
  * @extends Ext.Panel
  * The main queue panel
@@ -554,6 +706,8 @@ SABnzbd.views.history.Index = Ext.extend(Ext.Panel, {
     
 		Ext.applyIf(this, {
 			title: 'History',
+			
+			itemId: 'history',
       
 			defaults: {border:false},
       
@@ -718,7 +872,7 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'displayfield',
 					fieldLabel: 'Label',
 					value: 0,
-					id: 'speed'
+					itemId: 'speed'
 				},
 				{
 					xtype: 'displayfield',
@@ -729,6 +883,24 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 		});
     
     	SABnzbd.views.history.Tbar.superclass.initComponent.apply(this, arguments);
+    
+		this.initListeners();
+	},
+  
+	/**
+	* 
+	*/
+	initListeners: function() {
+
+		App.controllers.QueueController.on({
+			scope: this,
+			speed: function(s) {
+				this.getComponent('speed').setValue(s);
+			},
+			status: function(s) {
+				this.getComponent('status').setValue(s);
+			}
+		});
 	}
 });
 
@@ -748,6 +920,8 @@ SABnzbd.views.queue.Index = Ext.extend(Ext.Panel, {
     
 		Ext.applyIf(this, {
 			title: 'Queue',
+			
+			itemId: 'queue',
       
 			defaults: {border:false},
       
@@ -936,7 +1110,15 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'numberfield',
 					fieldLabel: 'Label',
 					width: 50,
-					disabled: true
+					itemId: 'limit',
+					listeners: {
+						change: function(t) {
+							App.controllers.QueueController.limitspeed(t);
+						},
+						specialkey: function(t, e) {
+							App.controllers.QueueController.specialkey(t, e);
+						}
+					}
 				},
 				{
 					xtype: 'tbtext',
@@ -994,7 +1176,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'displayfield',
 					fieldLabel: 'Label',
 					value: 0,
-					id: 'speed'
+					itemId: 'speed'
 				},
 				{
 					xtype: 'displayfield',
@@ -1005,7 +1187,28 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 		});
     
 		SABnzbd.views.queue.Tbar.superclass.initComponent.apply(this, arguments);    
+    
+		this.initListeners();
 	},
+  
+	/**
+	* 
+	*/
+	initListeners: function() {
+
+		App.controllers.QueueController.on({
+			scope: this,
+			speed: function(s) {
+				this.getComponent('speed').setValue(s);
+			},
+			limit: function(s) {
+				this.getComponent('limit').setValue(s);
+			},
+			status: function(s) {
+				this.getComponent('status').setValue(s);
+			}
+		});
+	}
 });
 
 

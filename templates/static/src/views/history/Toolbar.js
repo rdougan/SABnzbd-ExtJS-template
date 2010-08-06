@@ -67,7 +67,7 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'displayfield',
 					fieldLabel: 'Label',
 					value: 0,
-					id: 'speed'
+					itemId: 'speed'
 				},
 				{
 					xtype: 'displayfield',
@@ -78,5 +78,23 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 		});
     
     	SABnzbd.views.history.Tbar.superclass.initComponent.apply(this, arguments);
+    
+		this.initListeners();
+	},
+  
+	/**
+	* 
+	*/
+	initListeners: function() {
+
+		App.controllers.QueueController.on({
+			scope: this,
+			speed: function(s) {
+				this.getComponent('speed').setValue(s);
+			},
+			status: function(s) {
+				this.getComponent('status').setValue(s);
+			}
+		});
 	}
 });

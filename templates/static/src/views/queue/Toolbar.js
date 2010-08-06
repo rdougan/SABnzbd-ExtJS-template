@@ -54,7 +54,15 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'numberfield',
 					fieldLabel: 'Label',
 					width: 50,
-					disabled: true
+					itemId: 'limit',
+					listeners: {
+						change: function(t) {
+							App.controllers.QueueController.limitspeed(t);
+						},
+						specialkey: function(t, e) {
+							App.controllers.QueueController.specialkey(t, e);
+						}
+					}
 				},
 				{
 					xtype: 'tbtext',
@@ -112,7 +120,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'displayfield',
 					fieldLabel: 'Label',
 					value: 0,
-					id: 'speed'
+					itemId: 'speed'
 				},
 				{
 					xtype: 'displayfield',
@@ -123,5 +131,26 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 		});
     
 		SABnzbd.views.queue.Tbar.superclass.initComponent.apply(this, arguments);    
+    
+		this.initListeners();
 	},
+  
+	/**
+	* 
+	*/
+	initListeners: function() {
+
+		App.controllers.QueueController.on({
+			scope: this,
+			speed: function(s) {
+				this.getComponent('speed').setValue(s);
+			},
+			limit: function(s) {
+				this.getComponent('limit').setValue(s);
+			},
+			status: function(s) {
+				this.getComponent('status').setValue(s);
+			}
+		});
+	}
 });

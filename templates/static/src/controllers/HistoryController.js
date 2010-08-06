@@ -82,9 +82,70 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				});
 				
 				this.fireEvent('load', this.store);
-				
-				return;
+
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store loaded');
 			}
 		});
-  }
+	},
+
+	reload: function (reload) {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
+		Ext.Ajax.request({
+			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
+			scope: App.viewport.history.grid,
+			
+			success: function(response){
+				var o = Ext.decode(response.responseText);
+				slots = o.history.slots || [];
+					
+				for (count=this.store.getCount();count<slots.length;count++){
+					var MyRecord = new Ext.data.Record();
+					this.store.add(MyRecord);
+				}
+				
+				for (count=slots.length;count<this.store.getCount();count++){
+					this.store.removeAt(count);
+				}
+				
+				for (count=0;count<slots.length;count++){					
+					this.store.getAt(count).set('action_line',slots[count].action_line);
+					this.store.getAt(count).set('show_details',slots[count].show_details);
+					this.store.getAt(count).set('script_log',slots[count].script_log);
+					this.store.getAt(count).set('meta',slots[count].meta);
+					this.store.getAt(count).set('fail_message',slots[count].fail_message);
+					this.store.getAt(count).set('loaded',slots[count].loaded);
+					this.store.getAt(count).set('id',slots[count].id);
+					this.store.getAt(count).set('size',slots[count].size);
+					this.store.getAt(count).set('category',slots[count].category);
+					this.store.getAt(count).set('pp',slots[count].pp);
+					this.store.getAt(count).set('completeness',slots[count].completeness);
+					this.store.getAt(count).set('script',slots[count].script);
+					this.store.getAt(count).set('nzb_name',slots[count].nzb_name);
+					this.store.getAt(count).set('download_time',slots[count].download_time);
+					this.store.getAt(count).set('storage',slots[count].storage);
+					this.store.getAt(count).set('status',slots[count].status+' '+slots[count].action_line);
+					this.store.getAt(count).set('script_line',slots[count].script_line);
+					this.store.getAt(count).set('nzo_id',slots[count].nzo_id);
+					this.store.getAt(count).set('downloaded',slots[count].downloaded);
+					this.store.getAt(count).set('report',slots[count].report);
+					this.store.getAt(count).set('path',slots[count].path);
+					this.store.getAt(count).set('postproc_time',slots[count].postproc_time);
+					this.store.getAt(count).set('name',slots[count].name);
+					this.store.getAt(count).set('url',slots[count].url);
+					this.store.getAt(count).set('bytes',slots[count].bytes);
+					this.store.getAt(count).set('url_info',slots[count].url_info);
+					this.store.getAt(count).set('completed',App.controllers.HistoryController.convertTime(count,slots[count]));
+				}
+
+				App.controllers.QueueController.fireEvent('speed', o.history.kbpersec);
+				App.controllers.QueueController.fireEvent('status', o.history.status);
+				if (reload) App.controllers.ApplicationController.fireEvent('updater');
+
+				var currentTime = new Date()
+				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store updated ('+(currentTime.getTime()-starttime)+' ms)');
+			}
+		});
+	}
 });

@@ -14,6 +14,8 @@ SABnzbd.views.queue.Index = Ext.extend(Ext.Panel, {
     
 		Ext.applyIf(this, {
 			title: 'Queue',
+			
+			itemId: 'queue',
       
 			defaults: {border:false},
       
