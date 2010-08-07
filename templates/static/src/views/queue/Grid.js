@@ -10,17 +10,6 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
     
 		Ext.applyIf(this, {
 			store: new Ext.data.Store(),
-			enableDragDrop : true,
-			ddGroup: 'queue-dd',
-			ddText: 'Place this row.',
-			sm: new Ext.grid.RowSelectionModel({
-				singleSelect: true,
-				listeners: {
-					beforerowselect: function(sm, i, ke, row){
-						// Ext.getCmp('queuegrid').ddText = row.get('filename');
-					}
-				}
-			}),
 
 			columns: [
 				{

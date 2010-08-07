@@ -26,7 +26,6 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 		 * the file list grid
 		 */
 		this.file = new SABnzbd.views.file.Grid();
-		this.debug = new SABnzbd.views.debug.Panel();
     
 		Ext.applyIf(this, {
 			layout: 'border',
@@ -64,8 +63,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 					activeTab: 0,
           
 					items: [
-						this.file,
-						this.debug
+						this.file
 					]
 				}
 			]

@@ -34,6 +34,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	},
    
 	load: function() {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
 		Ext.Ajax.request({
 			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
 			scope: this,
@@ -73,7 +76,8 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				this.fireEvent('status', o.queue.status);
 				App.controllers.ApplicationController.fireEvent('updater');
 
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store loaded');
+				var currentTime = new Date()
+				console.log('Queue store loaded (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	},
@@ -131,7 +135,7 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				if (reload) App.controllers.ApplicationController.fireEvent('updater');
 
 				var currentTime = new Date()
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store updated ('+(currentTime.getTime()-starttime)+' ms)');
+				console.log('Queue store updated (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	},

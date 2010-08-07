@@ -38,6 +38,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 	},
 
 	load: function() {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
 		Ext.Ajax.request({
 			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
 			scope: this,
@@ -83,7 +86,8 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				
 				this.fireEvent('load', this.store);
 
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store loaded');
+				var currentTime = new Date()
+				console.log('History store loaded (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	},
@@ -144,7 +148,7 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				if (reload) App.controllers.ApplicationController.fireEvent('updater');
 
 				var currentTime = new Date()
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store updated ('+(currentTime.getTime()-starttime)+' ms)');
+				console.log('History store updated (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	}

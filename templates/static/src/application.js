@@ -10,8 +10,7 @@ Ext.ns(
 	'SABnzbd.views.file',
 	'SABnzbd.views.connection',
 	'SABnzbd.views.warning',
-	'SABnzbd.views.config',
-	'SABnzbd.views.debug'
+	'SABnzbd.views.config'
 );
 
 /**

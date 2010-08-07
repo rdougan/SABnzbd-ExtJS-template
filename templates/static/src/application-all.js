@@ -14,8 +14,7 @@ Ext.ns(
 	'SABnzbd.views.file',
 	'SABnzbd.views.connection',
 	'SABnzbd.views.warning',
-	'SABnzbd.views.config',
-	'SABnzbd.views.debug'
+	'SABnzbd.views.config'
 );
 
 /**
@@ -112,7 +111,6 @@ SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseC
 	initListeners: function() {
 		this.on('updater',this.updater);
 		this.on('maintabchange',this.maintabchange);
-		this.on('debugmsg',this.debugmsg);
 	},
   
 	/**
@@ -126,23 +124,6 @@ SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseC
 	
 	maintabchange: function(tabname) {
 		this.maintab = tabname;
-	},
-
-	debugmsg: function(msg) {
-		var currentTime = new Date();
-		var hours = currentTime.getHours();
-		if (hours < 10)
-			hours = '0' + hours;
-		var minutes = currentTime.getMinutes();
-		if (minutes < 10)
-			minutes = '0' + minutes;
-		var seconds = currentTime.getSeconds();
-		if (seconds < 10)
-			seconds = '0' + seconds;
-
-		time = hours+':'+minutes+':'+seconds;
-
-		App.viewport.debug.body.insertHtml('afterBegin',time+' - '+msg+'<br>');
 	},
 	
 	updater: function() {
@@ -217,6 +198,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 	},
 
 	load: function() {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
 		Ext.Ajax.request({
 			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
 			scope: this,
@@ -262,7 +246,8 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				
 				this.fireEvent('load', this.store);
 
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store loaded');
+				var currentTime = new Date()
+				console.log('History store loaded (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	},
@@ -323,7 +308,7 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				if (reload) App.controllers.ApplicationController.fireEvent('updater');
 
 				var currentTime = new Date()
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'History store updated ('+(currentTime.getTime()-starttime)+' ms)');
+				console.log('History store updated (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	}
@@ -365,6 +350,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	},
    
 	load: function() {
+		var currentTime = new Date()
+		var starttime = currentTime.getTime();
+
 		Ext.Ajax.request({
 			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
 			scope: this,
@@ -404,7 +392,8 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				this.fireEvent('status', o.queue.status);
 				App.controllers.ApplicationController.fireEvent('updater');
 
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store loaded');
+				var currentTime = new Date()
+				console.log('Queue store loaded (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	},
@@ -462,7 +451,7 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				if (reload) App.controllers.ApplicationController.fireEvent('updater');
 
 				var currentTime = new Date()
-				App.controllers.ApplicationController.fireEvent('debugmsg', 'Queue store updated ('+(currentTime.getTime()-starttime)+' ms)');
+				console.log('Queue store updated (%s ms)',(currentTime.getTime()-starttime));
 			}
 		});
 	},
@@ -546,7 +535,6 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 		 * the file list grid
 		 */
 		this.file = new SABnzbd.views.file.Grid();
-		this.debug = new SABnzbd.views.debug.Panel();
     
 		Ext.applyIf(this, {
 			layout: 'border',
@@ -584,8 +572,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 					activeTab: 0,
           
 					items: [
-						this.file,
-						this.debug
+						this.file
 					]
 				}
 			]
@@ -661,33 +648,6 @@ SABnzbd.views.file.Grid = Ext.extend(Ext.grid.GridPanel, {
   initListeners: function() {
     
   }
-});
-
-/**
- * @class SABnzbd.views.queue.Index
- * @extends Ext.Panel
- * The main queue panel
- */
-SABnzbd.views.debug.Panel = Ext.extend(Ext.Panel, {
-
-	initComponent: function() {
-		/**
-		* @property grid
-		* The download grid
-		*/
-		Ext.applyIf(this, {
-			title: 'Debug',
-      
-			defaults: {border:false},
-      
-			layout: 'fit',
-			
-			autoScroll: true
-      
-		});
-    
-		SABnzbd.views.debug.Panel.superclass.initComponent.apply(this, arguments);
-	}
 });
 
 /**
@@ -948,17 +908,6 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
     
 		Ext.applyIf(this, {
 			store: new Ext.data.Store(),
-			enableDragDrop : true,
-			ddGroup: 'queue-dd',
-			ddText: 'Place this row.',
-			sm: new Ext.grid.RowSelectionModel({
-				singleSelect: true,
-				listeners: {
-					beforerowselect: function(sm, i, ke, row){
-						// Ext.getCmp('queuegrid').ddText = row.get('filename');
-					}
-				}
-			}),
 
 			columns: [
 				{

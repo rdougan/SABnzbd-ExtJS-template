@@ -11,7 +11,6 @@ SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseC
 	initListeners: function() {
 		this.on('updater',this.updater);
 		this.on('maintabchange',this.maintabchange);
-		this.on('debugmsg',this.debugmsg);
 	},
   
 	/**
@@ -25,23 +24,6 @@ SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseC
 	
 	maintabchange: function(tabname) {
 		this.maintab = tabname;
-	},
-
-	debugmsg: function(msg) {
-		var currentTime = new Date();
-		var hours = currentTime.getHours();
-		if (hours < 10)
-			hours = '0' + hours;
-		var minutes = currentTime.getMinutes();
-		if (minutes < 10)
-			minutes = '0' + minutes;
-		var seconds = currentTime.getSeconds();
-		if (seconds < 10)
-			seconds = '0' + seconds;
-
-		time = hours+':'+minutes+':'+seconds;
-
-		App.viewport.debug.body.insertHtml('afterBegin',time+' - '+msg+'<br>');
 	},
 	
 	updater: function() {
