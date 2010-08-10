@@ -165,22 +165,22 @@ SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseC
  */
 SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
-	* 
-	*/
+	 * 
+	 */
 	initListeners: function() {
     
 	},
   
 	/**
-	* 
-	*/
+	 * 
+	 */
 	init: function() {
 		this.load();
 	},
     
 	/**
-	* 
-	*/
+	 * 
+	 */
 	
 	convertTime: function(v, record) {
 		var completed = new Date(record.completed*1000);
@@ -198,6 +198,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 	},
 
 	load: function() {
+		/**
+		 * Debug timer start.
+		 */
 		var currentTime = new Date()
 		var starttime = currentTime.getTime();
 
@@ -246,6 +249,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				
 				this.fireEvent('load', this.store);
 
+				/**
+				 * Debug msg to firebug with timer.
+				 */
 				var currentTime = new Date()
 				console.log('History store loaded (%s ms)',(currentTime.getTime()-starttime));
 			}
@@ -253,6 +259,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 	},
 
 	reload: function (reload) {
+		/**
+		 * Debug timer start.
+		 */
 		var currentTime = new Date()
 		var starttime = currentTime.getTime();
 
@@ -307,6 +316,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				App.controllers.QueueController.fireEvent('status', o.history.status);
 				if (reload) App.controllers.ApplicationController.fireEvent('updater');
 
+				/**
+				 * Debug msg to firebug with timer.
+				 */
 				var currentTime = new Date()
 				console.log('History store updated (%s ms)',(currentTime.getTime()-starttime));
 			}
@@ -350,6 +362,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	},
    
 	load: function() {
+		/**
+		 * Debug timer start.
+		 */
 		var currentTime = new Date()
 		var starttime = currentTime.getTime();
 
@@ -360,13 +375,15 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 			success: function(response) {
 				var o = Ext.decode(response.responseText);
 				slots = o.queue.slots || [];
+				cats = o.queue.categories || [];
 					
-				this.store = new Ext.data.JsonStore({
+				this.storeQueue = new Ext.data.JsonStore({
 					idIndex: 0,
 					data   : slots,
 				  
 					fields: [
 						{name:'index',      mapping:'index', type:'int'},
+						{name:'nzo_id',     mapping:'nzo_id'},
 						{name:'avg_age',    mapping:'avg_age'},
 						{name:'cat',        mapping:'cat'},
 						{name:'eta',        mapping:'eta'},
@@ -385,13 +402,30 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 						{name:'verbosity',  mapping:'verbosity'}
 					]
 				});
-				
-				this.fireEvent('load', this.store);
+
+				/**
+				 * This need a second look
+				 */
+				catstore = Ext.getCmp('queuecat').getStore();
+				this.CatRecord = Ext.data.Record.create([
+					'cat'
+				]);
+				for (count=catstore.getCount();count<o.queue.categories.length;count++){
+					var Record = new this.CatRecord({
+						cat: o.queue.categories[count]
+					});
+					catstore.add(Record);
+				}
+								
+				this.fireEvent('load', this.storeQueue);
 				this.fireEvent('speed', o.queue.kbpersec);
 				this.fireEvent('limit', o.queue.speedlimit);
 				this.fireEvent('status', o.queue.status);
 				App.controllers.ApplicationController.fireEvent('updater');
 
+				/**
+				 * Debug msg to firebug with timer.
+				 */
 				var currentTime = new Date()
 				console.log('Queue store loaded (%s ms)',(currentTime.getTime()-starttime));
 			}
@@ -404,6 +438,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	 * and messes up the grid scrolling.
 	 */
 	reload: function (reload) {
+		/**
+		 * Debug timer start.
+		 */
 		var currentTime = new Date()
 		var starttime = currentTime.getTime();
 
@@ -450,6 +487,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				App.controllers.QueueController.fireEvent('status', o.queue.status);
 				if (reload) App.controllers.ApplicationController.fireEvent('updater');
 
+				/**
+				 * Debug msg to firebug with timer.
+				 */
 				var currentTime = new Date()
 				console.log('Queue store updated (%s ms)',(currentTime.getTime()-starttime));
 			}
@@ -461,6 +501,11 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 			url: String.format('{0}queue/purge?session={1}', App.host || '', SessionKey),
 			success: function(response){
 				App.controllers.QueueController.reload();
+
+				/**
+				 * Debug msg to firebug.
+				 */
+				console.log('Queue cleared');
 			}
 		});
 	},
@@ -468,6 +513,12 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 	limitspeed: function(t) {
 		Ext.Ajax.request({
 			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', App.host || '', t.getValue(), SessionKey),
+			success: function(response){
+				/**
+				 * Debug msg to firebug.
+				 */
+				console.log('Speed limited to %s KB/s',t.getValue());
+			}
 		});
 	},
 	
@@ -475,6 +526,36 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 		if (e.getKey() == e.ENTER) {
 			t.blur();
 		}
+	},
+	
+	setname: function(t, n, o) {
+		nzo_id = App.viewport.queue.grid.getSelectionModel().getSelected().get('nzo_id');
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=queue&name=rename&value={1}&value2={2}&session={3}', App.host || '', nzo_id, n, SessionKey),
+			success: function(response){
+				App.controllers.QueueController.reload();
+
+				/**
+				 * Debug msg to firebug.
+				 */
+				console.log('Changed name from "%s" to "%s" on "%s"', o, n, nzo_id);
+			}
+		});
+	},
+
+	setcat: function(t, n, o) {
+		nzo_id = App.viewport.queue.grid.getSelectionModel().getSelected().get('nzo_id');
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=change_cat&value={1}&value2={2}&session={3}', App.host || '', nzo_id, n, SessionKey),
+			success: function(response){
+				App.controllers.QueueController.reload();
+
+				/**
+				 * Debug msg to firebug.
+				 */
+				console.log('Changed categorie from "%s" to "%s" on "%s"', o, n, nzo_id);
+			}
+		});
 	}
 });
 
@@ -901,13 +982,17 @@ SABnzbd.views.queue.Index = Ext.extend(Ext.Panel, {
  * @extends Ext.grid.GridPanel
  * The main queue grid panel
  */
-SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
+SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 
 	initComponent: function() {
 		this.Tbar = new SABnzbd.views.queue.Tbar();
     
 		Ext.applyIf(this, {
 			store: new Ext.data.Store(),
+			sm: new Ext.grid.RowSelectionModel({
+				singleSelect:true,
+				moveEditorOnEnter:false
+			}),
 
 			columns: [
 				{
@@ -921,28 +1006,35 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
 					header: 'Category',
 					sortable: false,
 					width: 60,
-					dataIndex: 'cat'
-					// editor: {
-						//  xtype: 'combo',
-						//  fieldLabel: 'Label',
-						//  store: new Ext.data.Store(),
-						//  triggerAction: 'all',
-						//  mode: 'local',
-						//  displayField: 'cat',
-						//  id: 'queuecat'
-					// }
+					dataIndex: 'cat',
+					editor: {
+						xtype: 'combo',
+						store: new Ext.data.Store(),
+						triggerAction: 'all',
+						mode: 'local',
+						displayField: 'cat',
+						id: 'queuecat',
+						listeners: {
+							change: function (t, n, o) {
+								App.controllers.QueueController.setcat(t, n, o);
+							}
+						}
+					}
 				},
 				{
 					header: 'File',
 					sortable: false,
 					width: 300,
 					dataIndex: 'filename',
-					ColumnID: 'filename'
-					//editor: {
-					//	xtype: 'textfield',
-					//	fieldLabel: 'Label',
-					//	id: 'queuename'
-					//}
+					ColumnID: 'filename',
+					editor: {
+						xtype: 'textfield',
+						listeners: {
+							change: function (t, n, o) {
+								App.controllers.QueueController.setname(t, n, o);
+							}
+						}
+					}
 				},
 				{
 					header: 'Status',

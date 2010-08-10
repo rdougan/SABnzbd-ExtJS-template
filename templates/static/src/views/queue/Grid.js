@@ -3,13 +3,17 @@
  * @extends Ext.grid.GridPanel
  * The main queue grid panel
  */
-SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
+SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 
 	initComponent: function() {
 		this.Tbar = new SABnzbd.views.queue.Tbar();
     
 		Ext.applyIf(this, {
 			store: new Ext.data.Store(),
+			sm: new Ext.grid.RowSelectionModel({
+				singleSelect:true,
+				moveEditorOnEnter:false
+			}),
 
 			columns: [
 				{
@@ -23,28 +27,35 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.GridPanel, {
 					header: 'Category',
 					sortable: false,
 					width: 60,
-					dataIndex: 'cat'
-					// editor: {
-						//  xtype: 'combo',
-						//  fieldLabel: 'Label',
-						//  store: new Ext.data.Store(),
-						//  triggerAction: 'all',
-						//  mode: 'local',
-						//  displayField: 'cat',
-						//  id: 'queuecat'
-					// }
+					dataIndex: 'cat',
+					editor: {
+						xtype: 'combo',
+						store: new Ext.data.Store(),
+						triggerAction: 'all',
+						mode: 'local',
+						displayField: 'cat',
+						id: 'queuecat',
+						listeners: {
+							change: function (t, n, o) {
+								App.controllers.QueueController.setcat(t, n, o);
+							}
+						}
+					}
 				},
 				{
 					header: 'File',
 					sortable: false,
 					width: 300,
 					dataIndex: 'filename',
-					ColumnID: 'filename'
-					//editor: {
-					//	xtype: 'textfield',
-					//	fieldLabel: 'Label',
-					//	id: 'queuename'
-					//}
+					ColumnID: 'filename',
+					editor: {
+						xtype: 'textfield',
+						listeners: {
+							change: function (t, n, o) {
+								App.controllers.QueueController.setname(t, n, o);
+							}
+						}
+					}
 				},
 				{
 					header: 'Status',

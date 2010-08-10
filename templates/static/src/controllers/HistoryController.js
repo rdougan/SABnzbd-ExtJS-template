@@ -5,22 +5,22 @@
  */
 SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseController, {
 	/**
-	* 
-	*/
+	 * 
+	 */
 	initListeners: function() {
     
 	},
   
 	/**
-	* 
-	*/
+	 * 
+	 */
 	init: function() {
 		this.load();
 	},
     
 	/**
-	* 
-	*/
+	 * 
+	 */
 	
 	convertTime: function(v, record) {
 		var completed = new Date(record.completed*1000);
@@ -38,6 +38,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 	},
 
 	load: function() {
+		/**
+		 * Debug timer start.
+		 */
 		var currentTime = new Date()
 		var starttime = currentTime.getTime();
 
@@ -86,6 +89,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				
 				this.fireEvent('load', this.store);
 
+				/**
+				 * Debug msg to firebug with timer.
+				 */
 				var currentTime = new Date()
 				console.log('History store loaded (%s ms)',(currentTime.getTime()-starttime));
 			}
@@ -93,6 +99,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 	},
 
 	reload: function (reload) {
+		/**
+		 * Debug timer start.
+		 */
 		var currentTime = new Date()
 		var starttime = currentTime.getTime();
 
@@ -147,6 +156,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 				App.controllers.QueueController.fireEvent('status', o.history.status);
 				if (reload) App.controllers.ApplicationController.fireEvent('updater');
 
+				/**
+				 * Debug msg to firebug with timer.
+				 */
 				var currentTime = new Date()
 				console.log('History store updated (%s ms)',(currentTime.getTime()-starttime));
 			}
