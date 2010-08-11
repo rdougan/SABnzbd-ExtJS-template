@@ -46,6 +46,7 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
     
 		this.initControllers.defer(100, this);
 		this.initViewport.defer(100, this);
+		this.initWindows.defer(100, this);
     
 		//fire the launch event
 		this.fireEvent('launch', this);
@@ -65,6 +66,13 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
 	 */
 	initViewport: function() {
 		this.viewport = new SABnzbd.views.application.Viewport();
+	},
+
+	/**
+	 * 
+	 */
+	initWindows: function() {
+		this.ConfigWindow = new SABnzbd.views.config.Index();
 	}
 });
 
@@ -556,6 +564,10 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				console.log('Changed categorie from "%s" to "%s" on "%s"', o, n, nzo_id);
 			}
 		});
+	},
+	
+	showconfig: function() {
+		App.ConfigWindow.show();
 	}
 });
 
@@ -663,7 +675,95 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 	}
 });
 
+SABnzbd.views.config.Index = Ext.extend(Ext.Window, {
 
+	initComponent: function() {
+		this.Main = new SABnzbd.views.config.Main({
+			region: 'center'
+		});
+
+		this.Menu = new SABnzbd.views.config.Menu({
+			region: 'west'
+		});
+    
+		Ext.applyIf(this, {
+			title: 'Config',
+			renderTo: Ext.getBody(),
+			width: 800,
+			height: 600,
+			layout: 'border',
+			frame:false,
+      
+			items: [
+				this.Main,
+				this.Menu
+			]
+		});
+    
+		SABnzbd.views.config.Index.superclass.initComponent.apply(this, arguments);
+	}
+});
+
+SABnzbd.views.config.Main = Ext.extend(Ext.Panel, {
+
+	initComponent: function() {
+    
+		Ext.applyIf(this, {
+			defaults: {border:false},
+      
+			layout: 'fit',
+			
+			frame: true
+      
+		});
+    
+		SABnzbd.views.config.Main.superclass.initComponent.apply(this, arguments);
+	}
+});
+
+SABnzbd.views.config.Menu = Ext.extend(Ext.grid.GridPanel, {
+
+	initComponent: function() {
+    
+		Ext.applyIf(this, {
+			store: new Ext.data.ArrayStore({
+				data: [
+					['General'],
+					['Folders'],
+					['Switches'],
+					['Servers'],
+					['Scheduling'],
+					['RSS'],
+					['Email'],
+					['Index Sites'],
+					['Categories'],
+					['Sorting']
+				],
+				fields: [
+					{name: 'menu'}
+				]
+			}),
+			
+			width: 200,
+			hideHeaders: true,
+			title: 'Menu',
+
+			sm: new Ext.grid.RowSelectionModel({
+				singleSelect: true,
+			}),
+			
+			columns: [{
+				sortable: false,
+				width: 196,
+				resizable: false,
+				dataIndex: 'menu'
+			}]
+      
+		});
+    
+		SABnzbd.views.config.Menu.superclass.initComponent.apply(this, arguments);
+	}
+});
 
 
 
@@ -775,14 +875,10 @@ SABnzbd.views.history.Grid = Ext.extend(Ext.grid.GridPanel, {
 
 		Ext.applyIf(this, {
 			store: new Ext.data.Store(),
-			enableDragDrop : true,
-			ddGroup: 'queue-dd',
-			ddText: 'Place this row.',
 			sm: new Ext.grid.RowSelectionModel({
 				singleSelect: true,
 				listeners: {
-					beforerowselect: function(sm, i, ke, row){
-						// Ext.getCmp('queuegrid').ddText = row.get('filename');
+						beforerowselect: function(sm, i, ke, row){
 					}
 				}
 			}),
@@ -1191,7 +1287,9 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'button',
 					text: 'Config',
 					icon: 'static/images/config.png',
-					disabled: true
+					handler: function() {
+						App.controllers.QueueController.showconfig();
+					}
 				},
 				{
 					xtype: 'tbfill'

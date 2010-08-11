@@ -228,5 +228,9 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 				console.log('Changed categorie from "%s" to "%s" on "%s"', o, n, nzo_id);
 			}
 		});
+	},
+	
+	showconfig: function() {
+		App.ConfigWindow.show();
 	}
 });

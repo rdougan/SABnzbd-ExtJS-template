@@ -42,6 +42,7 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
     
 		this.initControllers.defer(100, this);
 		this.initViewport.defer(100, this);
+		this.initWindows.defer(100, this);
     
 		//fire the launch event
 		this.fireEvent('launch', this);
@@ -61,5 +62,12 @@ SABnzbd.application = Ext.extend(Ext.util.Observable, {
 	 */
 	initViewport: function() {
 		this.viewport = new SABnzbd.views.application.Viewport();
+	},
+
+	/**
+	 * 
+	 */
+	initWindows: function() {
+		this.ConfigWindow = new SABnzbd.views.config.Index();
 	}
 });

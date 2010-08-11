@@ -16,7 +16,9 @@ src/controllers/WarningController.js
 src/views/application/Head.js
 src/views/application/Viewport.js
 
-src/views/config/Index.js
+src/views/config/index.js
+src/views/config/main.js
+src/views/config/menu.js
 
 src/views/connection/Grid.js
 

@@ -94,7 +94,9 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					xtype: 'button',
 					text: 'Config',
 					icon: 'static/images/config.png',
-					disabled: true
+					handler: function() {
+						App.controllers.QueueController.showconfig();
+					}
 				},
 				{
 					xtype: 'tbfill'
