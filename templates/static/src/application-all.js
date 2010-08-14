@@ -679,7 +679,8 @@ SABnzbd.views.config.Index = Ext.extend(Ext.Window, {
 
 	initComponent: function() {
 		this.Main = new SABnzbd.views.config.Main({
-			region: 'center'
+			region: 'center',
+			src: 'config'
 		});
 
 		this.Menu = new SABnzbd.views.config.Menu({
@@ -708,14 +709,15 @@ SABnzbd.views.config.Main = Ext.extend(Ext.Panel, {
 
 	initComponent: function() {
     
-		Ext.applyIf(this, {
-			defaults: {border:false},
-      
-			layout: 'fit',
-			
-			frame: true
-      
-		});
+		this.bodyCfg = {
+			tag: 'iframe',
+			src: this.src,
+			cls: this.bodyCls,
+			id: 'configframe',
+			style: {
+				border: '0px none'
+			}
+		};
     
 		SABnzbd.views.config.Main.superclass.initComponent.apply(this, arguments);
 	}
@@ -728,25 +730,33 @@ SABnzbd.views.config.Menu = Ext.extend(Ext.grid.GridPanel, {
 		Ext.applyIf(this, {
 			store: new Ext.data.ArrayStore({
 				data: [
-					['General'],
-					['Folders'],
-					['Switches'],
-					['Servers'],
-					['Scheduling'],
-					['RSS'],
-					['Email'],
-					['Index Sites'],
-					['Categories'],
-					['Sorting']
+					['General','general'],
+					['Folders','directories'],
+					['Switches','switches'],
+					['Servers','server'],
+					['Scheduling','scheduling'],
+					['RSS','rss'],
+					['Email','email'],
+					['Index Sites','newzbin'],
+					['Categories','categories'],
+					['Sorting','sorting']
 				],
 				fields: [
-					{name: 'menu'}
+					{name: 'menu'},
+					{name: 'link'}
 				]
 			}),
 			
 			width: 200,
 			hideHeaders: true,
 			title: 'Menu',
+			
+			listeners: {
+				rowclick: function(t, r) {
+					link = this.getSelectionModel().getSelected().get('link');
+					document.getElementById('configframe').src = 'config/'+link;
+				}
+			},
 
 			sm: new Ext.grid.RowSelectionModel({
 				singleSelect: true,

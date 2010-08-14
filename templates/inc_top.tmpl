@@ -15,20 +15,3 @@
 
 </head>
 <body>
-<h1><span id="first">SAB</span><span id="second">nzbd+</span><span id="third"> $version</span><span id="catchfrase">$T('signOn')</span></h1>
-
-<!--#set $mypath=$statpath+"/"+$topmenu#-->
-
-<span class="MainMenu">
-<!--#if $topmenu==''#-->
-    <a class="current" href="$mypath">$T('menu-home')</a> |
-<!--#else#-->
-    <a href="$statpath">$T('menu-home')</a> |
-<!--#end if#-->
-
-<!--#if $topmenu=='config'#-->
-    <a class="current" href="$mypath/">$T('menu-config')</a> |
-<!--#else#-->
-    <a href="$statpath/config/">$T('menu-config')</a> |
-<!--#end if#-->
-</span>

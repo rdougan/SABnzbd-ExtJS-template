@@ -2,7 +2,8 @@ SABnzbd.views.config.Index = Ext.extend(Ext.Window, {
 
 	initComponent: function() {
 		this.Main = new SABnzbd.views.config.Main({
-			region: 'center'
+			region: 'center',
+			src: 'config'
 		});
 
 		this.Menu = new SABnzbd.views.config.Menu({
