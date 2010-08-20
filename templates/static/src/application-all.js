@@ -1,226 +1,88 @@
-Ext.onReady(function() {
-	App = new SABnzbd.application();
-});
-
 Ext.ns(
 	'SABnzbd',
 
 	'SABnzbd.controllers',
 	'SABnzbd.views',
-
-	'SABnzbd.views.application',
-	'SABnzbd.views.queue',
-	'SABnzbd.views.history',
-	'SABnzbd.views.file',
-	'SABnzbd.views.connection',
-	'SABnzbd.views.warning',
-	'SABnzbd.views.config'
+	
+	'SABnzbd.live'
 );
 
-/**
- * @class SABnzbd.application
- * @extends Ext.util.Observable
- * Main application
- */
-SABnzbd.application = Ext.extend(Ext.util.Observable, {
-	/**
-	 * The SABnzbd host
-	 */
-	host: '../',
-  
-	controllers: {},
-  
-	/**
-	 * 
-	 */
-	constructor: function() {
-		this.addEvents(
-			/**
-			 * @event launch
-			 * Fires when the application has launched
-			 */
-			'launch'
-		);
-    
-		SABnzbd.application.superclass.constructor.call(this);
-    
-		this.initControllers.defer(100, this);
-		this.initViewport.defer(100, this);
-		this.initWindows.defer(100, this);
-    
-		//fire the launch event
-		this.fireEvent('launch', this);
-	},
-  
-	/**
-	 * 
-	 */
-	initControllers: function() {
-		for (controller in SABnzbd.controllers) {
-			this.controllers[controller] = new SABnzbd.controllers[controller];
-		};
-	},
-  
-	/**
-	 * 
-	 */
-	initViewport: function() {
-		this.viewport = new SABnzbd.views.application.Viewport();
-	},
-
-	/**
-	 * 
-	 */
-	initWindows: function() {
-		this.ConfigWindow = new SABnzbd.views.config.Index();
-	}
+Ext.onReady(function() {
+    SABnzbd.live.applicationController = new SABnzbd.controllers.ApplicationController();
+    SABnzbd.live.applicationController.launch();
 });
 
-/**
- * @class SABnzbd.controllers.BaseController
- * @extends Ext.util.Observable
- * Main application controller. All other controllers should extend this class.
- */
-SABnzbd.controllers.BaseController = Ext.extend(Ext.util.Observable, {
-	/**
-	 * 
-	 */
-	constructor: function() {
-		SABnzbd.application.superclass.constructor.call(this);
-    
-		//init any specified listeners
-		this.initListeners();
-    
-		//init the controller
-		this.init();
-	},
-  
-	//this should be overwritten if needed
-	initListeners: function() {
-    
-	},
-  
-	//this should be overwritten
-	init: function() {
-    
-	}
-});
-
-/**
- * @class SABnzbd.controllers.ApplicationController
- * @extends Ext.util.Observable
- * Controls anything to do with the main application
- */
-SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseController, {
-	/**
-	* 
-	*/
-		
-	initListeners: function() {
-		this.on('updater',this.updater);
-		this.on('maintabchange',this.maintabchange);
-	},
-  
-	/**
-	* 
-	*/
-	init: function() {
-
-	},
-    
-	maintab: '',
-	
-	maintabchange: function(tabname) {
-		this.maintab = tabname;
-	},
-	
-	updater: function() {
-		setTimeout(function() {
-			scope = App.controllers.ApplicationController;
-			
-			if (scope.maintab == 'history')
-				App.controllers.HistoryController.reload(true);
-			if (scope.maintab == 'queue')
-				App.controllers.QueueController.reload(true);
-		}, 1000);
-	},
-
-	restart: function() {
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=restart&session={1}', App.host || '', SessionKey),
-		});
-		Ext.Msg.wait('The system is restarting. Refresh the browser in a few seconds');
-	},
-	
-	shutdown: function() {
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=shutdown&session={1}', App.host || '', SessionKey),
-		});
-		Ext.Msg.wait('The system is shuting down. You can now close the browser');
-	}
-});
+Ext.ns('SABnzbd.views.config');
 
 
 
+Ext.ns('SABnzbd.views.file');
 
-
-
+Ext.ns('SABnzbd.views.history');
 
 /**
  * @class SABnzbd.controllers.HistoryController
  * @extends Ext.util.Observable
  * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseController, {
+SABnzbd.controllers.HistoryController = Ext.extend(Ext.util.Observable, {
+    /**
+     * True if the queue is currently loading
+     */
+    loading: false,
+    
+    /**
+     * True if queue is currently active (viewable by the user). defaults to false.
+     */
+    active: false,
+    
 	/**
 	 * 
 	 */
 	initListeners: function() {
-    
+        SABnzbd.live.applicationController.on({
+	        scope: this,
+	        
+	        history: this.onStart,
+	        queue  : this.onStop,
+	        
+	        poll: this.load
+	    });
 	},
-  
-	/**
-	 * 
-	 */
-	init: function() {
-		this.load();
-	},
-    
-	/**
-	 * 
-	 */
 	
-	convertTime: function(v, record) {
-		var completed = new Date(record.completed*1000);
-		
-		var Seconds = completed.getSeconds();
-		if (Seconds<10) Seconds = '0'+Seconds;
-		var Minutes = completed.getMinutes();
-		if (Minutes<10) Minutes = '0'+Minutes;
-		var Hours = completed.getHours();
-		if (Hours<10) Hours = '0'+Hours;
-		var Day = completed.getDate();
-		var Month = completed.getMonth();
-		var Year = completed.getFullYear();
-		return Day+'/'+Month+'-'+Year+' '+Hours+':'+Minutes+':'+Seconds;
+	/**
+     * 
+     */
+	onStart: function() {
+	    this.active = true;
+	    this.load();
 	},
-
+	
+	/**
+	 * 
+	 */
+	onStop: function() {
+	    this.active = false;
+	},
+    
+    /**
+     * 
+     */
 	load: function() {
-		/**
-		 * Debug timer start.
-		 */
-		var currentTime = new Date()
-		var starttime = currentTime.getTime();
-
+	    if (this.loading || !this.active) return;
+	    
+	    this.loading = true;
+	    
 		Ext.Ajax.request({
-			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
+			url  : String.format('{0}tapi?mode=history&output=json&session={1}', SABnzbd.live.applicationController.host || '', SessionKey),
 			scope: this,
 			
 			success: function(response) {
-				var o = Ext.decode(response.responseText),
-					slots = o.history.slots || [];
+				var response = Ext.decode(response.responseText),
+					slots    = response.history.slots || [],
+					store;
 					
-				this.store = new Ext.data.JsonStore({
+				store = new Ext.data.JsonStore({
 					idIndex: 0,
 					data   : slots,
 				  
@@ -255,137 +117,101 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 					]
 				});
 				
-				this.fireEvent('load', this.store);
-
-				/**
-				 * Debug msg to firebug with timer.
-				 */
-				var currentTime = new Date()
-				console.log('History store loaded (%s ms)',(currentTime.getTime()-starttime));
-			}
-		});
-	},
-
-	reload: function (reload) {
-		/**
-		 * Debug timer start.
-		 */
-		var currentTime = new Date()
-		var starttime = currentTime.getTime();
-
-		Ext.Ajax.request({
-			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
-			scope: App.viewport.history.grid,
-			
-			success: function(response){
-				var o = Ext.decode(response.responseText);
-				slots = o.history.slots || [];
-					
-				for (count=this.store.getCount();count<slots.length;count++){
-					var MyRecord = new Ext.data.Record();
-					this.store.add(MyRecord);
-				}
+				this.fireEvent('load', store);
 				
-				for (count=slots.length;count<this.store.getCount();count++){
-					this.store.removeAt(count);
-				}
-				
-				for (count=0;count<slots.length;count++){					
-					this.store.getAt(count).set('action_line',slots[count].action_line);
-					this.store.getAt(count).set('show_details',slots[count].show_details);
-					this.store.getAt(count).set('script_log',slots[count].script_log);
-					this.store.getAt(count).set('meta',slots[count].meta);
-					this.store.getAt(count).set('fail_message',slots[count].fail_message);
-					this.store.getAt(count).set('loaded',slots[count].loaded);
-					this.store.getAt(count).set('id',slots[count].id);
-					this.store.getAt(count).set('size',slots[count].size);
-					this.store.getAt(count).set('category',slots[count].category);
-					this.store.getAt(count).set('pp',slots[count].pp);
-					this.store.getAt(count).set('completeness',slots[count].completeness);
-					this.store.getAt(count).set('script',slots[count].script);
-					this.store.getAt(count).set('nzb_name',slots[count].nzb_name);
-					this.store.getAt(count).set('download_time',slots[count].download_time);
-					this.store.getAt(count).set('storage',slots[count].storage);
-					this.store.getAt(count).set('status',slots[count].status+' '+slots[count].action_line);
-					this.store.getAt(count).set('script_line',slots[count].script_line);
-					this.store.getAt(count).set('nzo_id',slots[count].nzo_id);
-					this.store.getAt(count).set('downloaded',slots[count].downloaded);
-					this.store.getAt(count).set('report',slots[count].report);
-					this.store.getAt(count).set('path',slots[count].path);
-					this.store.getAt(count).set('postproc_time',slots[count].postproc_time);
-					this.store.getAt(count).set('name',slots[count].name);
-					this.store.getAt(count).set('url',slots[count].url);
-					this.store.getAt(count).set('bytes',slots[count].bytes);
-					this.store.getAt(count).set('url_info',slots[count].url_info);
-					this.store.getAt(count).set('completed',App.controllers.HistoryController.convertTime(count,slots[count]));
-				}
-
-				App.controllers.QueueController.fireEvent('speed', o.history.kbpersec);
-				App.controllers.QueueController.fireEvent('status', o.history.status);
-				if (reload) App.controllers.ApplicationController.fireEvent('updater');
-
-				/**
-				 * Debug msg to firebug with timer.
-				 */
-				var currentTime = new Date()
-				console.log('History store updated (%s ms)',(currentTime.getTime()-starttime));
+				this.loading = false;
 			}
 		});
 	}
 });
+
+Ext.ns('SABnzbd.views.queue');
 
 /**
  * @class SABnzbd.controllers.QueueController
  * @extends Ext.util.Observable
  * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseController, {
-	/**
-	* 
-	*/
-	initListeners: function() {
-	},
-  
-	/**
-	* 
-	*/
-	init: function() {
-		this.load();
-	},
+SABnzbd.controllers.QueueController = Ext.extend(Ext.util.Observable, {
+    /**
+     * True if the queue is currently loading
+     */
+    loading: false,
+    
+    /**
+     * True if queue is currently active (viewable by the user). defaults to true.
+     */
+    active: true,
     
 	/**
-	* 
-	*/
-   
+	 * 
+	 */
+	initListeners: function() {
+	    SABnzbd.live.applicationController.on({
+	        scope: this,
+	        
+	        queue  : this.onStart,
+	        history: this.onStop,
+	        
+	        poll: this.load
+	    });
+	},
+    
+    /**
+     * 
+     */
 	percentageBar: function(v, record) {
-		return '<div style="height:11px;border:1px dotted #000000"><div style="height:11px;font-size:9px;background:#FF6666;width:'+record.percentage+'%"></div></div>';
+		return String.format('<div style="height:11px;border:1px dotted #000000"><div style="height:11px;font-size:9px;background:#FF6666;width:{0}%"></div></div>', record.percentage);
 	},
 	
+	/**
+	 * 
+	 */
 	status: function(v, record) {
-		return '<div class="'+record.status+'">'+record.status+'</div>';
+		return String.format('<div class="{0}">{0}</div>', record.status);
 	},
 	
+	/**
+	 * 
+	 */
 	size: function(v, record) {
-		return record.sizeleft.substring(0,record.sizeleft.length-3)+'/'+record.size+' ('+record.percentage+' %)'
+		return String.format('{0}/{1} ({2}%)', record.sizeleft.substring(0,record.sizeleft.length-3), record.size, record.percentage);
 	},
-   
+	
+    /**
+     * 
+     */
+	onStart: function() {
+	    this.active = true;
+	    this.load();
+	},
+	
+	/**
+	 * 
+	 */
+	onStop: function() {
+	    this.active = false;
+	},
+    
+    /**
+     * 
+     */
 	load: function() {
-		/**
-		 * Debug timer start.
-		 */
-		var currentTime = new Date()
-		var starttime = currentTime.getTime();
-
+	    if (this.loading || !this.active) return;
+	    
+	    this.loading = true;
+	    
 		Ext.Ajax.request({
-			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
+			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', SABnzbd.live.applicationController.host || '', SessionKey),
 			scope: this,
 			
 			success: function(response) {
-				var o = Ext.decode(response.responseText);
-				slots = o.queue.slots || [];
-				cats = o.queue.categories || [];
+				var response   = Ext.decode(response.responseText),
+				    slots      = response.queue.slots || [],
+				    categories = response.queue.categories || [],
+				    store;
 					
-				this.storeQueue = new Ext.data.JsonStore({
+				store = new Ext.data.JsonStore({
 					idIndex: 0,
 					data   : slots,
 				  
@@ -410,168 +236,209 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
 						{name:'verbosity',  mapping:'verbosity'}
 					]
 				});
-
-				/**
-				 * This need a second look
-				 */
-				catstore = Ext.getCmp('queuecat').getStore();
-				this.CatRecord = Ext.data.Record.create([
-					'cat'
-				]);
-				for (count=catstore.getCount();count<o.queue.categories.length;count++){
-					var Record = new this.CatRecord({
-						cat: o.queue.categories[count]
-					});
-					catstore.add(Record);
-				}
+                
+                // catstore = Ext.getCmp('queuecat').getStore();
+                // this.CatRecord = Ext.data.Record.create([
+                //  'cat'
+                // ]);
+                // 
+                // for (count = catstore.getCount(); count < o.queue.categories.length; count++) {
+                //  var Record = new this.CatRecord({
+                //      cat: o.queue.categories[count]
+                //  });
+                //  catstore.add(Record);
+                // }
 								
-				this.fireEvent('load', this.storeQueue);
-				this.fireEvent('speed', o.queue.kbpersec);
-				this.fireEvent('limit', o.queue.speedlimit);
-				this.fireEvent('status', o.queue.status);
-				App.controllers.ApplicationController.fireEvent('updater');
-
-				/**
-				 * Debug msg to firebug with timer.
-				 */
-				var currentTime = new Date()
-				console.log('Queue store loaded (%s ms)',(currentTime.getTime()-starttime));
+				this.fireEvent('load', store);
+				
+				SABnzbd.live.applicationController.fireEvent('speed',  response.queue.kbpersec);
+				SABnzbd.live.applicationController.fireEvent('limit',  response.queue.speedlimit);
+				SABnzbd.live.applicationController.fireEvent('status', response.queue.status);
+				
+				this.loading = false;
 			}
 		});
 	},
-
-	/*
-	 * The reload function need some work. The reason why I did not just use the load
-	 * function is because the load function removes the selectionmodel from the store
-	 * and messes up the grid scrolling.
+	
+	/**
+	 * 
 	 */
-	reload: function (reload) {
-		/**
-		 * Debug timer start.
-		 */
-		var currentTime = new Date()
-		var starttime = currentTime.getTime();
-
+	purge: function() {
 		Ext.Ajax.request({
-			url  : String.format('{0}tapi?mode=queue&start=START&limit=LIMIT&output=json&session={1}', App.host || '', SessionKey),
-			scope: App.viewport.queue.grid,
-			
+			url    : String.format('{0}queue/purge?session={1}', SABnzbd.live.applicationController.host || '', SessionKey),
 			success: function(response){
-				var o = Ext.decode(response.responseText);
-				slots = o.queue.slots || [];
-					
-				for (count=this.store.getCount();count<slots.length;count++){
-					var MyRecord = new Ext.data.Record();
-					this.store.add(MyRecord);
-				}
-				
-				for (count=slots.length;count<this.store.getCount();count++){
-					this.store.removeAt(count);
-				}
-				
-				for (count=0;count<slots.length;count++){
-					if (slots[count].status == 'Paused'){
-						buttons = '<img style="cursor: pointer;" onclick="queueresume(\''+slots[count].nzo_id+'\')" src="../static/images/play.png">';
-					} else {
-						buttons = '<img style="cursor: pointer;" onclick="queuepause(\''+slots[count].nzo_id+'\')" src="../static/images/pause.png">';
-					}
-					buttons += ' ';
-					buttons += '<img style="cursor: pointer;" onclick="queuedelete(\''+slots[count].nzo_id+'\')" src="../static/images/delete.png">';
-					buttons += ' ';
-					buttons += '<img style="cursor: pointer;" onclick="queueinfo(\''+slots[count].nzo_id+'\')" src="../static/images/info.png">';
-					
-					this.store.getAt(count).set('buttons',buttons);
-					this.store.getAt(count).set('nzo_id',slots[count].nzo_id);
-					this.store.getAt(count).set('filename',slots[count].filename);
-					this.store.getAt(count).set('timeleft',slots[count].timeleft);
-					this.store.getAt(count).set('size',App.controllers.QueueController.size(count,slots[count]));
-					this.store.getAt(count).set('percentage',App.controllers.QueueController.percentageBar(count,slots[count]));
-					this.store.getAt(count).set('avg_age',slots[count].avg_age);
-					this.store.getAt(count).set('cat',slots[count].cat);
-					this.store.getAt(count).set('status',App.controllers.QueueController.status(count,slots[count]));
-				}
-
-				App.controllers.QueueController.fireEvent('speed', o.queue.kbpersec);
-				App.controllers.QueueController.fireEvent('status', o.queue.status);
-				if (reload) App.controllers.ApplicationController.fireEvent('updater');
-
-				/**
-				 * Debug msg to firebug with timer.
-				 */
-				var currentTime = new Date()
-				console.log('Queue store updated (%s ms)',(currentTime.getTime()-starttime));
+				SABnzbd.live.queueController.reload();
 			}
 		});
 	},
 	
-	clear: function() {
+    /**
+     * Changes the name of a NZB
+     */
+	setName: function(t, n, o) {
+		var nzo_id = SABnzbd.live.applicationController.viewport.queue.grid.getSelectionModel().getSelected().get('nzo_id');
+		
 		Ext.Ajax.request({
-			url: String.format('{0}queue/purge?session={1}', App.host || '', SessionKey),
-			success: function(response){
-				App.controllers.QueueController.reload();
-
-				/**
-				 * Debug msg to firebug.
-				 */
-				console.log('Queue cleared');
+			url    : String.format('{0}tapi?mode=queue&name=rename&value={1}&value2={2}&session={3}', SABnzbd.live.applicationController.host || '', nzo_id, n, SessionKey),
+			success: function(response) {
+				SABnzbd.live.queueController.reload();
 			}
 		});
 	},
-	
-	limitspeed: function(t) {
+    
+    /**
+     * Changes the category of a NZB
+     */
+	setCategory: function(t, n, o) {
+		var nzo_id = SABnzbd.live.applicationController.viewport.queue.grid.getSelectionModel().getSelected().get('nzo_id');
+		
 		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', App.host || '', t.getValue(), SessionKey),
-			success: function(response){
-				/**
-				 * Debug msg to firebug.
-				 */
-				console.log('Speed limited to %s KB/s',t.getValue());
+			url: String.format('{0}tapi?mode=change_cat&value={1}&value2={2}&session={3}', SABnzbd.live.applicationController.host || '', nzo_id, n, SessionKey),
+			success: function(response) {
+				SABnzbd.live.queueController.reload();
 			}
 		});
-	},
-	
-	specialkey: function(t, e) {
-		if (e.getKey() == e.ENTER) {
-			t.blur();
-		}
-	},
-	
-	setname: function(t, n, o) {
-		nzo_id = App.viewport.queue.grid.getSelectionModel().getSelected().get('nzo_id');
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=queue&name=rename&value={1}&value2={2}&session={3}', App.host || '', nzo_id, n, SessionKey),
-			success: function(response){
-				App.controllers.QueueController.reload();
-
-				/**
-				 * Debug msg to firebug.
-				 */
-				console.log('Changed name from "%s" to "%s" on "%s"', o, n, nzo_id);
-			}
-		});
-	},
-
-	setcat: function(t, n, o) {
-		nzo_id = App.viewport.queue.grid.getSelectionModel().getSelected().get('nzo_id');
-		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=change_cat&value={1}&value2={2}&session={3}', App.host || '', nzo_id, n, SessionKey),
-			success: function(response){
-				App.controllers.QueueController.reload();
-
-				/**
-				 * Debug msg to firebug.
-				 */
-				console.log('Changed categorie from "%s" to "%s" on "%s"', o, n, nzo_id);
-			}
-		});
-	},
-	
-	showconfig: function() {
-		App.ConfigWindow.show();
 	}
+	
+	// specialKey: function(t, e) {
+    //  if (e.getKey() == e.ENTER) {
+    //      t.blur();
+    //  }
+    // },
 });
 
 
+
+Ext.ns('SABnzbd.views.application');
+
+/**
+ * @class SABnzbd.controllers.ApplicationController
+ * @extends Ext.util.Observable
+ * Controls anything to do with the main application
+ */
+SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
+	/**
+	 * 
+	 */
+	host: '../',
+	
+	/**
+	 * 
+	 */
+	launch: function() {
+	    this.addEvents(
+	        /**
+	         * Fired when the app is launched
+	         */
+	        'launch',
+	        
+            /**
+             * The current speed SABnzbd is downloading at
+             */
+	        'speed',
+	        
+            /**
+             * The current speed limit
+             */
+	        'limit',
+	        
+	        /**
+	         * The current download status
+	         */
+	        'status'
+	    );
+	    
+        this.initControllers();
+        this.initViews();
+        this.initListeners();
+        this.initPolling();
+        
+        this.fireEvent('launch', this);
+	},
+	
+	/**
+     * Sets up any controllers for the application
+     */
+    initControllers: function() {
+        SABnzbd.live.queueController   = new SABnzbd.controllers.QueueController();
+        SABnzbd.live.historyController = new SABnzbd.controllers.HistoryController();
+    },
+    
+    /**
+     * 
+     */
+    initViews: function() {
+        this.viewport = new SABnzbd.views.application.Viewport();
+    },
+	
+	/**
+	 * 
+	 */
+	initListeners: function() {
+        this.on({
+            scope: this,
+            
+            launch: function() {
+                for (controller in SABnzbd.live) {
+                    if (controller != 'applicationController') {
+                        var controller = SABnzbd.live[controller];
+                        
+                        if (controller.init) controller.init();
+                        if (controller.initViews) controller.initViews();
+                        if (controller.initListeners) controller.initListeners();
+                    };
+                };
+            }
+        });
+	},
+	
+    /**
+     * 
+     */
+	initPolling: function() {
+	    var me = this;
+	    
+	    this.fireEvent('poll', this);
+	    
+	    setInterval(function() {
+	        me.fireEvent('poll', me);
+	    }, 1000);
+	},
+    
+    /**
+     * Restarts SABnzbd
+     */
+	restart: function() {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=restart&session={1}', this.host || '', SessionKey)
+		});
+		
+		Ext.Msg.wait('The system is restarting. Refresh the browser in a few seconds');
+	},
+	
+    /**
+     * Shutsdown the SABnzbd server
+     */
+	shutdown: function() {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=shutdown&session={1}', this.host || '', SessionKey)
+		});
+		
+		Ext.Msg.wait('The system is shuting down. You can now close the browser');
+	},
+	
+	/**
+	 * Limits the speed of all downloads
+	 */
+	limitSpeed: function(field) {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', this.host || '', field.getValue(), SessionKey),
+			success: function(response) {
+			    
+			}
+		});
+	}
+});
 
 /**
  * @class SABnzbd.views.application.Menu
@@ -579,20 +446,109 @@ SABnzbd.controllers.QueueController = Ext.extend(SABnzbd.controllers.BaseControl
  * The menu for the application
  */
 SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
-
+    /**
+     * 
+     */
 	initComponent: function() {
 		Ext.applyIf(this, {
-			height: 80,
-      
+            height: 104,
 			layout: 'border',
       
 			items: [
-			{
-				region: 'center',
-				html: '<img src="../static/images/top.png">',
-				bodyStyle: 'background-image:url("../static/images/top_bg.png")',
-				border: false
-			}
+			    {
+			        region: 'north',
+			        xtype : 'toolbar',
+			        height: 27,
+			        
+			        items: [
+			            {
+        					xtype: 'displayfield',
+        					value: 'Status:&nbsp;'
+        				},
+        				{
+        					xtype: 'displayfield',
+        					value: '',
+        					id: 'status'
+        				},
+        				{
+        					xtype: 'tbseparator'
+        				},
+        				{
+        					xtype: 'displayfield',
+        					fieldLabel: 'Label',
+        					value: 'Speed:&nbsp;'
+        				},
+        				{
+        					xtype: 'displayfield',
+        					fieldLabel: 'Label',
+        					value: 0,
+        					itemId: 'speed'
+        				},
+        				{
+        					xtype: 'displayfield',
+        					fieldLabel: 'Label',
+        					value: 'KB/s'
+        				},
+			            '->',
+			            {
+        					xtype: 'displayfield',
+        					fieldLabel: 'Label',
+        					value: '<img src="static/images/network.png">&nbsp;'
+        				},
+        				{
+        					xtype: 'tbtext',
+        					text: 'Limit Speed:&nbsp;&nbsp;'
+        				},
+        				{
+        					xtype: 'numberfield',
+        					fieldLabel: 'Label',
+        					width: 50,
+        					itemId: 'limit',
+        					listeners: {
+        						change: function(t) {
+        							SABnzbd.live.queueController.limitspeed(t);
+        						},
+        						specialkey: function(t, e) {
+        							SABnzbd.live.queueController.specialkey(t, e);
+        						}
+        					}
+        				},
+        				{
+        					xtype: 'tbtext',
+        					text: 'KB/s'
+        				},
+        				{xtype: 'tbseparator'},
+			            {
+        					text   : 'Configuration',
+        					icon   : 'static/images/config.png',
+        					handler: function() {
+        						SABnzbd.live.configurationController.show();
+        					}
+        				},
+        				{xtype: 'tbseparator'},
+        				{
+        					text   : 'Restart',
+        					icon   : 'static/images/restart.png',
+        					handler: function() {
+        						SABnzbd.live.applicationController.restart();
+        					}
+        				},
+        				{
+        					text   : 'Shutdown',
+        					icon   : 'static/images/quit.png',
+        					handler: function() {
+        						SABnzbd.live.applicationController.shutdown();
+        					}
+        				}
+			        ]
+			    },
+    			{
+    				region   : 'center',
+    				html     : '<img src="../static/images/top.png">',
+    				bodyStyle: 'background-image:url("../static/images/top_bg.png")',
+    				border   : false,
+        			height   : 80
+    			}
 			]
 		});
     
@@ -651,7 +607,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 					
 					listeners: {
 						tabchange: function(t, p) {
-							App.controllers.ApplicationController.fireEvent('maintabchange',p.getItemId());
+							SABnzbd.live.applicationController.fireEvent(p.getItemId());
 						}
 					}
 
@@ -940,7 +896,7 @@ SABnzbd.views.history.Grid = Ext.extend(Ext.grid.GridPanel, {
 	* 
 	*/
 	initListeners: function() {
-		App.controllers.HistoryController.on({
+		SABnzbd.live.historyController.on({
 			scope: this,
       
 			load: function(store) {
@@ -966,65 +922,6 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 					text: 'Clear',
 					icon: 'static/images/clear.png',
 					disabled: true
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'button',
-					text: 'Shutdown',
-					icon: 'static/images/quit.png',
-					handler: function() {
-						App.controllers.ApplicationController.shutdown();
-					}
-				},
-				{
-					xtype: 'button',
-					text: 'Restart',
-					icon: 'static/images/restart.png',
-					handler: function() {
-						App.controllers.ApplicationController.restart();
-					}
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'button',
-					text: 'Config',
-					icon: 'static/images/config.png',
-					disabled: true
-				},
-				{
-					xtype: 'tbfill'
-				},
-				{
-					xtype: 'displayfield',
-					value: 'Status:&nbsp;'
-				},
-				{
-					xtype: 'displayfield',
-					value: '',
-					id: 'status'
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 'Speed:&nbsp;'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 0,
-					itemId: 'speed'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 'KB/s'
 				}
 			]
 		});
@@ -1039,7 +936,7 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 	*/
 	initListeners: function() {
 
-		App.controllers.QueueController.on({
+		SABnzbd.live.queueController.on({
 			scope: this,
 			speed: function(s) {
 				this.getComponent('speed').setValue(s);
@@ -1122,7 +1019,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 						id: 'queuecat',
 						listeners: {
 							change: function (t, n, o) {
-								App.controllers.QueueController.setcat(t, n, o);
+								SABnzbd.live.queueController.setcat(t, n, o);
 							}
 						}
 					}
@@ -1137,7 +1034,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 						xtype: 'textfield',
 						listeners: {
 							change: function (t, n, o) {
-								App.controllers.QueueController.setname(t, n, o);
+								SABnzbd.live.queueController.setname(t, n, o);
 							}
 						}
 					}
@@ -1191,7 +1088,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 	*/
 	initListeners: function() {
 
-		App.controllers.QueueController.on({
+		SABnzbd.live.queueController.on({
 			scope: this,
       
 			load: function(store) {
@@ -1238,99 +1135,8 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					text: 'Clear',
 					icon: 'static/images/clear.png',
 					handler: function() {
-						App.controllers.QueueController.clear();
+						SABnzbd.live.queueController.clear();
 					}
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: '<img src="static/images/network.png">&nbsp;'
-				},
-				{
-					xtype: 'tbtext',
-					text: 'Limit Speed:&nbsp;&nbsp;'
-				},
-				{
-					xtype: 'numberfield',
-					fieldLabel: 'Label',
-					width: 50,
-					itemId: 'limit',
-					listeners: {
-						change: function(t) {
-							App.controllers.QueueController.limitspeed(t);
-						},
-						specialkey: function(t, e) {
-							App.controllers.QueueController.specialkey(t, e);
-						}
-					}
-				},
-				{
-					xtype: 'tbtext',
-					text: 'KB/s'
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'button',
-					text: 'Shutdown',
-					icon: 'static/images/quit.png',
-					handler: function() {
-						App.controllers.ApplicationController.shutdown();
-					}
-				},
-				{
-					xtype: 'button',
-					text: 'Restart',
-					icon: 'static/images/restart.png',
-					handler: function() {
-						App.controllers.ApplicationController.restart();
-					}
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'button',
-					text: 'Config',
-					icon: 'static/images/config.png',
-					handler: function() {
-						App.controllers.QueueController.showconfig();
-					}
-				},
-				{
-					xtype: 'tbfill'
-				},
-				{
-					xtype: 'displayfield',
-					value: 'Status:&nbsp;'
-				},
-				{
-					xtype: 'displayfield',
-					value: '',
-					id: 'status'
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 'Speed:&nbsp;'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 0,
-					itemId: 'speed'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 'KB/s'
 				}
 			]
 		});
@@ -1345,7 +1151,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 	*/
 	initListeners: function() {
 
-		App.controllers.QueueController.on({
+		SABnzbd.live.queueController.on({
 			scope: this,
 			speed: function(s) {
 				this.getComponent('speed').setValue(s);

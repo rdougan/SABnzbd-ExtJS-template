@@ -1,15 +1,14 @@
 src/boot.js
-src/application.js
 
 
-src/controllers/BaseController.js
-src/controllers/ApplicationController.js
+
 src/controllers/ConfigController.js
 src/controllers/ConnectionController.js
 src/controllers/FileController.js
 src/controllers/HistoryController.js
 src/controllers/QueueController.js
 src/controllers/WarningController.js
+src/controllers/ApplicationController.js
 
 
 

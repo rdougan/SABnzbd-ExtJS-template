@@ -9,11 +9,11 @@ module ExtMVC
     # Does the actual building - just concatenates file_list and optionally minifies
     def build
       concatenate(file_list, output_filename)
-      system('growlnotify "Built ' + name + '"')
+      # system('growlnotify "Built ' + name + '"')
       
       if should_minify
         minify output_filename
-        system('growlnotify "Minified ' + name + '"')
+        # system('growlnotify "Minified ' + name + '"')
       end
       
       puts message

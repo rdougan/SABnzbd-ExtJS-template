@@ -37,7 +37,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 						id: 'queuecat',
 						listeners: {
 							change: function (t, n, o) {
-								App.controllers.QueueController.setcat(t, n, o);
+								SABnzbd.live.queueController.setcat(t, n, o);
 							}
 						}
 					}
@@ -52,7 +52,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 						xtype: 'textfield',
 						listeners: {
 							change: function (t, n, o) {
-								App.controllers.QueueController.setname(t, n, o);
+								SABnzbd.live.queueController.setname(t, n, o);
 							}
 						}
 					}
@@ -106,7 +106,7 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 	*/
 	initListeners: function() {
 
-		App.controllers.QueueController.on({
+		SABnzbd.live.queueController.on({
 			scope: this,
       
 			load: function(store) {

@@ -49,7 +49,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 					
 					listeners: {
 						tabchange: function(t, p) {
-							App.controllers.ApplicationController.fireEvent('maintabchange',p.getItemId());
+							SABnzbd.live.applicationController.fireEvent(p.getItemId());
 						}
 					}
 

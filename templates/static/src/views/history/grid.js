@@ -65,7 +65,7 @@ SABnzbd.views.history.Grid = Ext.extend(Ext.grid.GridPanel, {
 	* 
 	*/
 	initListeners: function() {
-		App.controllers.HistoryController.on({
+		SABnzbd.live.historyController.on({
 			scope: this,
       
 			load: function(store) {

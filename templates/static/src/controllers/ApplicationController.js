@@ -1,53 +1,130 @@
+Ext.ns('SABnzbd.views.application');
+
 /**
  * @class SABnzbd.controllers.ApplicationController
  * @extends Ext.util.Observable
  * Controls anything to do with the main application
  */
-SABnzbd.controllers.ApplicationController = Ext.extend(SABnzbd.controllers.BaseController, {
+SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	/**
-	* 
-	*/
-		
-	initListeners: function() {
-		this.on('updater',this.updater);
-		this.on('maintabchange',this.maintabchange);
+	 * 
+	 */
+	host: '../',
+	
+	/**
+	 * 
+	 */
+	launch: function() {
+	    this.addEvents(
+	        /**
+	         * Fired when the app is launched
+	         */
+	        'launch',
+	        
+            /**
+             * The current speed SABnzbd is downloading at
+             */
+	        'speed',
+	        
+            /**
+             * The current speed limit
+             */
+	        'limit',
+	        
+	        /**
+	         * The current download status
+	         */
+	        'status'
+	    );
+	    
+        this.initControllers();
+        this.initViews();
+        this.initListeners();
+        this.initPolling();
+        
+        this.fireEvent('launch', this);
 	},
-  
+	
 	/**
-	* 
-	*/
-	init: function() {
-
+     * Sets up any controllers for the application
+     */
+    initControllers: function() {
+        SABnzbd.live.queueController   = new SABnzbd.controllers.QueueController();
+        SABnzbd.live.historyController = new SABnzbd.controllers.HistoryController();
+    },
+    
+    /**
+     * 
+     */
+    initViews: function() {
+        this.viewport = new SABnzbd.views.application.Viewport();
+    },
+	
+	/**
+	 * 
+	 */
+	initListeners: function() {
+        this.on({
+            scope: this,
+            
+            launch: function() {
+                for (controller in SABnzbd.live) {
+                    if (controller != 'applicationController') {
+                        var controller = SABnzbd.live[controller];
+                        
+                        if (controller.init) controller.init();
+                        if (controller.initViews) controller.initViews();
+                        if (controller.initListeners) controller.initListeners();
+                    };
+                };
+            }
+        });
+	},
+	
+    /**
+     * 
+     */
+	initPolling: function() {
+	    var me = this;
+	    
+	    this.fireEvent('poll', this);
+	    
+	    setInterval(function() {
+	        me.fireEvent('poll', me);
+	    }, 1000);
 	},
     
-	maintab: '',
-	
-	maintabchange: function(tabname) {
-		this.maintab = tabname;
-	},
-	
-	updater: function() {
-		setTimeout(function() {
-			scope = App.controllers.ApplicationController;
-			
-			if (scope.maintab == 'history')
-				App.controllers.HistoryController.reload(true);
-			if (scope.maintab == 'queue')
-				App.controllers.QueueController.reload(true);
-		}, 1000);
-	},
-
+    /**
+     * Restarts SABnzbd
+     */
 	restart: function() {
 		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=restart&session={1}', App.host || '', SessionKey),
+			url: String.format('{0}tapi?mode=restart&session={1}', this.host || '', SessionKey)
 		});
+		
 		Ext.Msg.wait('The system is restarting. Refresh the browser in a few seconds');
 	},
 	
+    /**
+     * Shutsdown the SABnzbd server
+     */
 	shutdown: function() {
 		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=shutdown&session={1}', App.host || '', SessionKey),
+			url: String.format('{0}tapi?mode=shutdown&session={1}', this.host || '', SessionKey)
 		});
+		
 		Ext.Msg.wait('The system is shuting down. You can now close the browser');
+	},
+	
+	/**
+	 * Limits the speed of all downloads
+	 */
+	limitSpeed: function(field) {
+		Ext.Ajax.request({
+			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', this.host || '', field.getValue(), SessionKey),
+			success: function(response) {
+			    
+			}
+		});
 	}
 });

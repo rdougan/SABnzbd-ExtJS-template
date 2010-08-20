@@ -35,99 +35,8 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 					text: 'Clear',
 					icon: 'static/images/clear.png',
 					handler: function() {
-						App.controllers.QueueController.clear();
+						SABnzbd.live.queueController.clear();
 					}
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: '<img src="static/images/network.png">&nbsp;'
-				},
-				{
-					xtype: 'tbtext',
-					text: 'Limit Speed:&nbsp;&nbsp;'
-				},
-				{
-					xtype: 'numberfield',
-					fieldLabel: 'Label',
-					width: 50,
-					itemId: 'limit',
-					listeners: {
-						change: function(t) {
-							App.controllers.QueueController.limitspeed(t);
-						},
-						specialkey: function(t, e) {
-							App.controllers.QueueController.specialkey(t, e);
-						}
-					}
-				},
-				{
-					xtype: 'tbtext',
-					text: 'KB/s'
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'button',
-					text: 'Shutdown',
-					icon: 'static/images/quit.png',
-					handler: function() {
-						App.controllers.ApplicationController.shutdown();
-					}
-				},
-				{
-					xtype: 'button',
-					text: 'Restart',
-					icon: 'static/images/restart.png',
-					handler: function() {
-						App.controllers.ApplicationController.restart();
-					}
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'button',
-					text: 'Config',
-					icon: 'static/images/config.png',
-					handler: function() {
-						App.controllers.QueueController.showconfig();
-					}
-				},
-				{
-					xtype: 'tbfill'
-				},
-				{
-					xtype: 'displayfield',
-					value: 'Status:&nbsp;'
-				},
-				{
-					xtype: 'displayfield',
-					value: '',
-					id: 'status'
-				},
-				{
-					xtype: 'tbseparator'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 'Speed:&nbsp;'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 0,
-					itemId: 'speed'
-				},
-				{
-					xtype: 'displayfield',
-					fieldLabel: 'Label',
-					value: 'KB/s'
 				}
 			]
 		});
@@ -142,7 +51,7 @@ SABnzbd.views.queue.Tbar = Ext.extend(Ext.Toolbar, {
 	*/
 	initListeners: function() {
 
-		App.controllers.QueueController.on({
+		SABnzbd.live.queueController.on({
 			scope: this,
 			speed: function(s) {
 				this.getComponent('speed').setValue(s);

@@ -1,0 +1,1 @@
+Ext.ns('SABnzbd.views.file');

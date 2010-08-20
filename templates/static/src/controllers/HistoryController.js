@@ -1,58 +1,68 @@
+Ext.ns('SABnzbd.views.history');
+
 /**
  * @class SABnzbd.controllers.HistoryController
  * @extends Ext.util.Observable
  * Controls anything to do with the main download queue
  */
-SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseController, {
+SABnzbd.controllers.HistoryController = Ext.extend(Ext.util.Observable, {
+    /**
+     * True if the queue is currently loading
+     */
+    loading: false,
+    
+    /**
+     * True if queue is currently active (viewable by the user). defaults to false.
+     */
+    active: false,
+    
 	/**
 	 * 
 	 */
 	initListeners: function() {
-    
+        SABnzbd.live.applicationController.on({
+	        scope: this,
+	        
+	        history: this.onStart,
+	        queue  : this.onStop,
+	        
+	        poll: this.load
+	    });
 	},
-  
-	/**
-	 * 
-	 */
-	init: function() {
-		this.load();
-	},
-    
-	/**
-	 * 
-	 */
 	
-	convertTime: function(v, record) {
-		var completed = new Date(record.completed*1000);
-		
-		var Seconds = completed.getSeconds();
-		if (Seconds<10) Seconds = '0'+Seconds;
-		var Minutes = completed.getMinutes();
-		if (Minutes<10) Minutes = '0'+Minutes;
-		var Hours = completed.getHours();
-		if (Hours<10) Hours = '0'+Hours;
-		var Day = completed.getDate();
-		var Month = completed.getMonth();
-		var Year = completed.getFullYear();
-		return Day+'/'+Month+'-'+Year+' '+Hours+':'+Minutes+':'+Seconds;
+	/**
+     * 
+     */
+	onStart: function() {
+	    this.active = true;
+	    this.load();
 	},
-
+	
+	/**
+	 * 
+	 */
+	onStop: function() {
+	    this.active = false;
+	},
+    
+    /**
+     * 
+     */
 	load: function() {
-		/**
-		 * Debug timer start.
-		 */
-		var currentTime = new Date()
-		var starttime = currentTime.getTime();
-
+	    if (this.loading || !this.active) return;
+	    
+	    this.loading = true;
+	    
 		Ext.Ajax.request({
-			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
+			url  : String.format('{0}tapi?mode=history&output=json&session={1}', SABnzbd.live.applicationController.host || '', SessionKey),
 			scope: this,
 			
 			success: function(response) {
-				var o = Ext.decode(response.responseText),
-					slots = o.history.slots || [];
+				var response = Ext.decode(response.responseText),
+					slots    = response.history.slots || [],
+					store;
 					
-				this.store = new Ext.data.JsonStore({
+				store = new Ext.data.JsonStore({
 					idIndex: 0,
 					data   : slots,
 				  
@@ -87,80 +97,9 @@ SABnzbd.controllers.HistoryController = Ext.extend(SABnzbd.controllers.BaseContr
 					]
 				});
 				
-				this.fireEvent('load', this.store);
-
-				/**
-				 * Debug msg to firebug with timer.
-				 */
-				var currentTime = new Date()
-				console.log('History store loaded (%s ms)',(currentTime.getTime()-starttime));
-			}
-		});
-	},
-
-	reload: function (reload) {
-		/**
-		 * Debug timer start.
-		 */
-		var currentTime = new Date()
-		var starttime = currentTime.getTime();
-
-		Ext.Ajax.request({
-			url  : String.format('{0}tapi?mode=history&output=json&session={1}', App.host || '', SessionKey),
-			scope: App.viewport.history.grid,
-			
-			success: function(response){
-				var o = Ext.decode(response.responseText);
-				slots = o.history.slots || [];
-					
-				for (count=this.store.getCount();count<slots.length;count++){
-					var MyRecord = new Ext.data.Record();
-					this.store.add(MyRecord);
-				}
+				this.fireEvent('load', store);
 				
-				for (count=slots.length;count<this.store.getCount();count++){
-					this.store.removeAt(count);
-				}
-				
-				for (count=0;count<slots.length;count++){					
-					this.store.getAt(count).set('action_line',slots[count].action_line);
-					this.store.getAt(count).set('show_details',slots[count].show_details);
-					this.store.getAt(count).set('script_log',slots[count].script_log);
-					this.store.getAt(count).set('meta',slots[count].meta);
-					this.store.getAt(count).set('fail_message',slots[count].fail_message);
-					this.store.getAt(count).set('loaded',slots[count].loaded);
-					this.store.getAt(count).set('id',slots[count].id);
-					this.store.getAt(count).set('size',slots[count].size);
-					this.store.getAt(count).set('category',slots[count].category);
-					this.store.getAt(count).set('pp',slots[count].pp);
-					this.store.getAt(count).set('completeness',slots[count].completeness);
-					this.store.getAt(count).set('script',slots[count].script);
-					this.store.getAt(count).set('nzb_name',slots[count].nzb_name);
-					this.store.getAt(count).set('download_time',slots[count].download_time);
-					this.store.getAt(count).set('storage',slots[count].storage);
-					this.store.getAt(count).set('status',slots[count].status+' '+slots[count].action_line);
-					this.store.getAt(count).set('script_line',slots[count].script_line);
-					this.store.getAt(count).set('nzo_id',slots[count].nzo_id);
-					this.store.getAt(count).set('downloaded',slots[count].downloaded);
-					this.store.getAt(count).set('report',slots[count].report);
-					this.store.getAt(count).set('path',slots[count].path);
-					this.store.getAt(count).set('postproc_time',slots[count].postproc_time);
-					this.store.getAt(count).set('name',slots[count].name);
-					this.store.getAt(count).set('url',slots[count].url);
-					this.store.getAt(count).set('bytes',slots[count].bytes);
-					this.store.getAt(count).set('url_info',slots[count].url_info);
-					this.store.getAt(count).set('completed',App.controllers.HistoryController.convertTime(count,slots[count]));
-				}
-
-				App.controllers.QueueController.fireEvent('speed', o.history.kbpersec);
-				App.controllers.QueueController.fireEvent('status', o.history.status);
-				if (reload) App.controllers.ApplicationController.fireEvent('updater');
-
-				/**
-				 * Debug msg to firebug with timer.
-				 */
-				var currentTime = new Date()
-				console.log('History store updated (%s ms)',(currentTime.getTime()-starttime));
+				this.loading = false;
 			}
 		});
 	}
