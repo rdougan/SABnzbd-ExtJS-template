@@ -464,7 +464,7 @@ SABnzbd.views.application.Header = Ext.extend(Ext.Panel, {
      */
 	initComponent: function() {
 		Ext.applyIf(this, {
-            height: 104,
+            height: 55,
 			layout: 'border',
       
 			items: [
@@ -475,28 +475,6 @@ SABnzbd.views.application.Header = Ext.extend(Ext.Panel, {
 			        height: 27,
 			        
 			        items: [
-			            {
-        					xtype: 'displayfield',
-        					value: 'Status:&nbsp;'
-        				},
-        				{
-        					xtype : 'displayfield',
-        					value : '',
-        					itemId: 'status'
-        				},
-        				{xtype: 'tbseparator'},
-        				{
-        					xtype     : 'displayfield',
-        					fieldLabel: 'Label',
-        					value     : 'Speed:&nbsp;'
-        				},
-        				{
-        					xtype     : 'displayfield',
-        					fieldLabel: 'Label',
-        					value     : 0,
-        					itemId    : 'speed'
-        				},
-			            '->',
 			            {
         					xtype     : 'displayfield',
         					fieldLabel: 'Label',
@@ -540,7 +518,6 @@ SABnzbd.views.application.Header = Ext.extend(Ext.Panel, {
         						SABnzbd.live.configurationController.show();
         					}
         				},
-        				{xtype: 'tbseparator'},
         				{
         					text   : 'Restart',
         					icon   : 'static/images/restart.png',
@@ -554,13 +531,35 @@ SABnzbd.views.application.Header = Ext.extend(Ext.Panel, {
         					handler: function() {
         						SABnzbd.live.applicationController.shutdown();
         					}
+        				},
+			            '->',
+			            {
+        					xtype: 'displayfield',
+        					value: 'Status:&nbsp;'
+        				},
+        				{
+        					xtype : 'displayfield',
+        					value : '',
+        					itemId: 'status'
+        				},
+        				{xtype: 'tbseparator'},
+        				{
+        					xtype     : 'displayfield',
+        					fieldLabel: 'Label',
+        					value     : 'Speed:&nbsp;'
+        				},
+        				{
+        					xtype     : 'displayfield',
+        					fieldLabel: 'Label',
+        					value     : 0,
+        					itemId    : 'speed'
         				}
 			        ]
 			    },
     			{
     				region   : 'center',
-    				html     : '<img src="../static/images/top.png">',
-    				bodyStyle: 'background-image:url("../static/images/top_bg.png")',
+    				//html     : '<img src="../static/images/top.png">',
+    				bodyStyle: 'background-image:url("../static/images/top_bg2.png")',
     				border   : false,
         			height   : 80
     			}
