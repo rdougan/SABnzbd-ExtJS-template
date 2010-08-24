@@ -10,7 +10,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 		 * @property menu
 		 * The menu at the top of the view
 		 */
-		this.head = new SABnzbd.views.application.Head({
+		this.head = new SABnzbd.views.application.Header({
 			region: 'north'
 		});
     

@@ -1,3 +1,7 @@
+src/config/overrides/RowSelectionModel.js
+
+
+
 src/boot.js
 
 
@@ -12,7 +16,7 @@ src/controllers/ApplicationController.js
 
 
 
-src/views/application/Head.js
+src/views/application/Header.js
 src/views/application/Viewport.js
 
 src/views/config/index.js

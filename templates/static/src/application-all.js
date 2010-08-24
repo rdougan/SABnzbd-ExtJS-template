@@ -1,3 +1,9 @@
+Ext.grid.RowSelectionModel.override({
+    getSelectedIndex: function(){
+        return this.grid.store.indexOf(this.selections.itemAt(0));
+    }
+});
+
 Ext.ns(
 	'SABnzbd',
 
@@ -299,12 +305,6 @@ SABnzbd.controllers.QueueController = Ext.extend(Ext.util.Observable, {
 			}
 		});
 	}
-	
-	// specialKey: function(t, e) {
-    //  if (e.getKey() == e.ENTER) {
-    //      t.blur();
-    //  }
-    // },
 });
 
 
@@ -321,6 +321,11 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	 * 
 	 */
 	host: '../',
+	
+	/**
+	 * 
+	 */
+	pollInterval: 1000,
 	
 	/**
 	 * 
@@ -398,11 +403,11 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	initPolling: function() {
 	    var me = this;
 	    
-	    this.fireEvent('poll', this);
+	    this.fireEvent.defer(50, this, ['poll']);
 	    
 	    setInterval(function() {
-	        me.fireEvent('poll', me);
-	    }, 1000);
+	        me.fireEvent('poll');
+	    }, this.pollInterval);
 	},
     
     /**
@@ -431,21 +436,29 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	 * Limits the speed of all downloads
 	 */
 	limitSpeed: function(field) {
+	    var value = field.getValue();
+	    
 		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', this.host || '', field.getValue(), SessionKey),
-			success: function(response) {
-			    
-			}
+			url    : String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', this.host || '', value, SessionKey)
+            // scope  : this,
+            // success: function(response) {
+            //     this.fireEvent('limitchange', value, this);
+            // }
 		});
 	}
 });
 
 /**
- * @class SABnzbd.views.application.Menu
+ * @class SABnzbd.views.application.Header
  * @extends Ext.Panel
  * The menu for the application
  */
-SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
+SABnzbd.views.application.Header = Ext.extend(Ext.Panel, {
+    /**
+     * True if the limit field is blur'd
+     */
+    allowLimitUpdate: true,
+    
     /**
      * 
      */
@@ -456,6 +469,7 @@ SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
       
 			items: [
 			    {
+			        itemId: 'toolbar',
 			        region: 'north',
 			        xtype : 'toolbar',
 			        height: 27,
@@ -466,50 +480,51 @@ SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
         					value: 'Status:&nbsp;'
         				},
         				{
-        					xtype: 'displayfield',
-        					value: '',
-        					id: 'status'
+        					xtype : 'displayfield',
+        					value : '',
+        					itemId: 'status'
         				},
+        				{xtype: 'tbseparator'},
         				{
-        					xtype: 'tbseparator'
-        				},
-        				{
-        					xtype: 'displayfield',
+        					xtype     : 'displayfield',
         					fieldLabel: 'Label',
-        					value: 'Speed:&nbsp;'
+        					value     : 'Speed:&nbsp;'
         				},
         				{
-        					xtype: 'displayfield',
+        					xtype     : 'displayfield',
         					fieldLabel: 'Label',
-        					value: 0,
-        					itemId: 'speed'
-        				},
-        				{
-        					xtype: 'displayfield',
-        					fieldLabel: 'Label',
-        					value: 'KB/s'
+        					value     : 0,
+        					itemId    : 'speed'
         				},
 			            '->',
 			            {
-        					xtype: 'displayfield',
+        					xtype     : 'displayfield',
         					fieldLabel: 'Label',
-        					value: '<img src="static/images/network.png">&nbsp;'
+        					value     : '<img src="static/images/network.png">&nbsp;'
         				},
         				{
         					xtype: 'tbtext',
-        					text: 'Limit Speed:&nbsp;&nbsp;'
+        					text : 'Limit Speed:&nbsp;&nbsp;'
         				},
         				{
-        					xtype: 'numberfield',
+        					xtype     : 'numberfield',
         					fieldLabel: 'Label',
-        					width: 50,
-        					itemId: 'limit',
-        					listeners: {
-        						change: function(t) {
-        							SABnzbd.live.queueController.limitspeed(t);
+        					width     : 50,
+        					itemId    : 'limit',
+        					listeners : {
+        					    scope: this,
+        					    
+        					    focus: function() {
+        					        this.allowLimitUpdate = false;
+        					    },
+        					    blur: function() {
+        					        this.allowLimitUpdate = true;
+        					    },
+        						change: function(value) {
+                                    SABnzbd.live.applicationController.limitSpeed(value);
         						},
         						specialkey: function(t, e) {
-        							SABnzbd.live.queueController.specialkey(t, e);
+                                    if (e.getKey() == e.ENTER) t.blur();
         						}
         					}
         				},
@@ -553,6 +568,24 @@ SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
 		});
     
 		SABnzbd.views.queue.Index.superclass.initComponent.apply(this, arguments);
+		
+		this.initListeners();
+	},
+	
+	initListeners: function() {
+	    SABnzbd.live.applicationController.on({
+	        scope: this,
+	        
+	        limit: function(limit) {
+                if (this.allowLimitUpdate) this.getComponent('toolbar').getComponent('limit').setValue(limit);
+			},
+	        speed: function(speed) {
+                this.getComponent('toolbar').getComponent('speed').setValue(String.format('{0}KB/s', speed));
+			},
+			status: function(status) {
+                this.getComponent('toolbar').getComponent('status').setValue(status);
+			}
+	    });
 	}
 });
 
@@ -568,7 +601,7 @@ SABnzbd.views.application.Viewport = Ext.extend(Ext.Viewport, {
 		 * @property menu
 		 * The menu at the top of the view
 		 */
-		this.head = new SABnzbd.views.application.Head({
+		this.head = new SABnzbd.views.application.Header({
 			region: 'north'
 		});
     
@@ -835,6 +868,10 @@ SABnzbd.views.history.Index = Ext.extend(Ext.Panel, {
  * The main queue grid panel
  */
 SABnzbd.views.history.Grid = Ext.extend(Ext.grid.GridPanel, {
+    /**
+     * 
+     */
+    currentSelection: null,
 
 	initComponent: function() {
 		this.Tbar = new SABnzbd.views.history.Tbar();
@@ -901,7 +938,18 @@ SABnzbd.views.history.Grid = Ext.extend(Ext.grid.GridPanel, {
       
 			load: function(store) {
 				this.reconfigure(store, this.getColumnModel());
+				
+				//reselect row
+				if (this.currentSelection) this.getSelectionModel().selectRow(this.currentSelection);
 			}
+		});
+		
+		this.on({
+		    scope: this,
+		    
+		    rowclick: function() {
+		        this.currentSelection = this.getSelectionModel().getSelectedIndex();
+		    }
 		});
 	}
 });
@@ -935,16 +983,7 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 	* 
 	*/
 	initListeners: function() {
-
-		SABnzbd.live.queueController.on({
-			scope: this,
-			speed: function(s) {
-				this.getComponent('speed').setValue(s);
-			},
-			status: function(s) {
-				this.getComponent('status').setValue(s);
-			}
-		});
+        
 	}
 });
 
@@ -986,7 +1025,11 @@ SABnzbd.views.queue.Index = Ext.extend(Ext.Panel, {
  * The main queue grid panel
  */
 SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
-
+    /**
+     * 
+     */
+    currentSelection: null,
+    
 	initComponent: function() {
 		this.Tbar = new SABnzbd.views.queue.Tbar();
     
@@ -1087,13 +1130,23 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 	* 
 	*/
 	initListeners: function() {
-
 		SABnzbd.live.queueController.on({
 			scope: this,
       
 			load: function(store) {
 				this.reconfigure(store, this.getColumnModel());
+				
+				//reselect row
+				if (this.currentSelection) this.getSelectionModel().selectRow(this.currentSelection);
 			}
+		});
+		
+		this.on({
+		    scope: this,
+		    
+		    rowclick: function() {
+		        this.currentSelection = this.getSelectionModel().getSelectedIndex();
+		    }
 		});
 	}
 });

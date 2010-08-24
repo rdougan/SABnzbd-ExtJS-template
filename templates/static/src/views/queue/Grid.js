@@ -4,7 +4,11 @@
  * The main queue grid panel
  */
 SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
-
+    /**
+     * 
+     */
+    currentSelection: null,
+    
 	initComponent: function() {
 		this.Tbar = new SABnzbd.views.queue.Tbar();
     
@@ -105,13 +109,23 @@ SABnzbd.views.queue.Grid = Ext.extend(Ext.grid.EditorGridPanel, {
 	* 
 	*/
 	initListeners: function() {
-
 		SABnzbd.live.queueController.on({
 			scope: this,
       
 			load: function(store) {
 				this.reconfigure(store, this.getColumnModel());
+				
+				//reselect row
+				if (this.currentSelection) this.getSelectionModel().selectRow(this.currentSelection);
 			}
+		});
+		
+		this.on({
+		    scope: this,
+		    
+		    rowclick: function() {
+		        this.currentSelection = this.getSelectionModel().getSelectedIndex();
+		    }
 		});
 	}
 });

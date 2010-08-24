@@ -1,9 +1,14 @@
 /**
- * @class SABnzbd.views.application.Menu
+ * @class SABnzbd.views.application.Header
  * @extends Ext.Panel
  * The menu for the application
  */
-SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
+SABnzbd.views.application.Header = Ext.extend(Ext.Panel, {
+    /**
+     * True if the limit field is blur'd
+     */
+    allowLimitUpdate: true,
+    
     /**
      * 
      */
@@ -14,6 +19,7 @@ SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
       
 			items: [
 			    {
+			        itemId: 'toolbar',
 			        region: 'north',
 			        xtype : 'toolbar',
 			        height: 27,
@@ -24,50 +30,51 @@ SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
         					value: 'Status:&nbsp;'
         				},
         				{
-        					xtype: 'displayfield',
-        					value: '',
-        					id: 'status'
+        					xtype : 'displayfield',
+        					value : '',
+        					itemId: 'status'
         				},
+        				{xtype: 'tbseparator'},
         				{
-        					xtype: 'tbseparator'
-        				},
-        				{
-        					xtype: 'displayfield',
+        					xtype     : 'displayfield',
         					fieldLabel: 'Label',
-        					value: 'Speed:&nbsp;'
+        					value     : 'Speed:&nbsp;'
         				},
         				{
-        					xtype: 'displayfield',
+        					xtype     : 'displayfield',
         					fieldLabel: 'Label',
-        					value: 0,
-        					itemId: 'speed'
-        				},
-        				{
-        					xtype: 'displayfield',
-        					fieldLabel: 'Label',
-        					value: 'KB/s'
+        					value     : 0,
+        					itemId    : 'speed'
         				},
 			            '->',
 			            {
-        					xtype: 'displayfield',
+        					xtype     : 'displayfield',
         					fieldLabel: 'Label',
-        					value: '<img src="static/images/network.png">&nbsp;'
+        					value     : '<img src="static/images/network.png">&nbsp;'
         				},
         				{
         					xtype: 'tbtext',
-        					text: 'Limit Speed:&nbsp;&nbsp;'
+        					text : 'Limit Speed:&nbsp;&nbsp;'
         				},
         				{
-        					xtype: 'numberfield',
+        					xtype     : 'numberfield',
         					fieldLabel: 'Label',
-        					width: 50,
-        					itemId: 'limit',
-        					listeners: {
-        						change: function(t) {
-        							SABnzbd.live.queueController.limitspeed(t);
+        					width     : 50,
+        					itemId    : 'limit',
+        					listeners : {
+        					    scope: this,
+        					    
+        					    focus: function() {
+        					        this.allowLimitUpdate = false;
+        					    },
+        					    blur: function() {
+        					        this.allowLimitUpdate = true;
+        					    },
+        						change: function(value) {
+                                    SABnzbd.live.applicationController.limitSpeed(value);
         						},
         						specialkey: function(t, e) {
-        							SABnzbd.live.queueController.specialkey(t, e);
+                                    if (e.getKey() == e.ENTER) t.blur();
         						}
         					}
         				},
@@ -111,5 +118,23 @@ SABnzbd.views.application.Head = Ext.extend(Ext.Panel, {
 		});
     
 		SABnzbd.views.queue.Index.superclass.initComponent.apply(this, arguments);
+		
+		this.initListeners();
+	},
+	
+	initListeners: function() {
+	    SABnzbd.live.applicationController.on({
+	        scope: this,
+	        
+	        limit: function(limit) {
+                if (this.allowLimitUpdate) this.getComponent('toolbar').getComponent('limit').setValue(limit);
+			},
+	        speed: function(speed) {
+                this.getComponent('toolbar').getComponent('speed').setValue(String.format('{0}KB/s', speed));
+			},
+			status: function(status) {
+                this.getComponent('toolbar').getComponent('status').setValue(status);
+			}
+	    });
 	}
 });

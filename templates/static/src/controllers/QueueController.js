@@ -172,10 +172,4 @@ SABnzbd.controllers.QueueController = Ext.extend(Ext.util.Observable, {
 			}
 		});
 	}
-	
-	// specialKey: function(t, e) {
-    //  if (e.getKey() == e.ENTER) {
-    //      t.blur();
-    //  }
-    // },
 });

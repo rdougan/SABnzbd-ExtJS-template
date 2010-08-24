@@ -27,15 +27,6 @@ SABnzbd.views.history.Tbar = Ext.extend(Ext.Toolbar, {
 	* 
 	*/
 	initListeners: function() {
-
-		SABnzbd.live.queueController.on({
-			scope: this,
-			speed: function(s) {
-				this.getComponent('speed').setValue(s);
-			},
-			status: function(s) {
-				this.getComponent('status').setValue(s);
-			}
-		});
+        
 	}
 });

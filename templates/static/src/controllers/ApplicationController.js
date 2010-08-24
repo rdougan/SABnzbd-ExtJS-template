@@ -14,6 +14,11 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	/**
 	 * 
 	 */
+	pollInterval: 1000,
+	
+	/**
+	 * 
+	 */
 	launch: function() {
 	    this.addEvents(
 	        /**
@@ -87,11 +92,11 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	initPolling: function() {
 	    var me = this;
 	    
-	    this.fireEvent('poll', this);
+	    this.fireEvent.defer(50, this, ['poll']);
 	    
 	    setInterval(function() {
-	        me.fireEvent('poll', me);
-	    }, 1000);
+	        me.fireEvent('poll');
+	    }, this.pollInterval);
 	},
     
     /**
@@ -120,11 +125,14 @@ SABnzbd.controllers.ApplicationController = Ext.extend(Ext.util.Observable, {
 	 * Limits the speed of all downloads
 	 */
 	limitSpeed: function(field) {
+	    var value = field.getValue();
+	    
 		Ext.Ajax.request({
-			url: String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', this.host || '', field.getValue(), SessionKey),
-			success: function(response) {
-			    
-			}
+			url    : String.format('{0}tapi?mode=config&name=speedlimit&value={1}&session={2}', this.host || '', value, SessionKey)
+            // scope  : this,
+            // success: function(response) {
+            //     this.fireEvent('limitchange', value, this);
+            // }
 		});
 	}
 });
